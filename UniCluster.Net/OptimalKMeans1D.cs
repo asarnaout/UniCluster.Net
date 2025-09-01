@@ -1,14 +1,20 @@
 namespace UniCluster.Net;
 
-public class KMeans1D
+public class OptimalKMeans1D
 {
-    internal double[] PrefixSums = default!;
+    private double[] _prefixSums = default!;
 
-    internal double[] PrefixSumOfSquares = default!;
+    private double[] _prefixSumOfSquares = default!;
 
-    internal double[,] DpTable = default!;
+    private double[,] _dpTable = default!;
 
-    internal double[,] BestSplitIndices = default!;
+    private double[,] _bestSplitIndices = default!;
+
+    internal double[,] DpTable => _dpTable;
+
+    internal double[] PrefixSums => _prefixSums;
+
+    internal double[] PrefixSumOfSquares => _prefixSumOfSquares;
 
     public ClusteringResult Fit(double[] values, int numberOfClusters, bool preSortedArray = false)
     {
@@ -47,7 +53,7 @@ public class KMeans1D
             clusters.Add(new Cluster(points, centroid));
         }
 
-        var totalCost = DpTable[values.Length, numberOfClusters];
+        var totalCost = _dpTable[values.Length, numberOfClusters];
 
         return new ClusteringResult(clusters, totalCost);
     }
@@ -112,7 +118,7 @@ public class KMeans1D
             {
                 if (k == 1)
                 {
-                    DpTable[i, k] = ComputeCost(1, i);
+                    _dpTable[i, k] = ComputeCost(1, i);
                 }
                 else
                 {
@@ -122,7 +128,7 @@ public class KMeans1D
 
                     for (var j = k - 1; j <= i - 1; j++)
                     {
-                        var cost = DpTable[j, k - 1] + ComputeCost(j + 1, i);
+                        var cost = _dpTable[j, k - 1] + ComputeCost(j + 1, i);
                         if (cost < minCost)
                         {
                             minCost = cost;
@@ -130,42 +136,23 @@ public class KMeans1D
                         }
                     }
 
-                    BestSplitIndices[i, k] = bestIndex;
+                    _bestSplitIndices[i, k] = bestIndex;
 
-                    DpTable[i, k] = minCost;
+                    _dpTable[i, k] = minCost;
                 }
-            }
-        }
-    }
-
-    private void InitializeTable(int length, int width)
-    {
-        DpTable = new double[length, width];
-        BestSplitIndices = new double[length, width];
-
-        for (var i = 0; i < length; i++)
-        {
-            for (var j = 0; j < width; j++)
-            {
-                if (i == 0 && j == 0)
-                {
-                    continue;
-                }
-
-                DpTable[i, j] = double.PositiveInfinity;
             }
         }
     }
 
     internal void ComputePrefixSums(double[] values)
     {
-        PrefixSums = new double[values.Length + 1];
-        PrefixSumOfSquares = new double[values.Length + 1];
+        _prefixSums = new double[values.Length + 1];
+        _prefixSumOfSquares = new double[values.Length + 1];
 
         for (var i = 0; i < values.Length; i++)
         {
-            PrefixSums[i + 1] = PrefixSums[i] + values[i];
-            PrefixSumOfSquares[i + 1] = PrefixSumOfSquares[i] + values[i] * values[i];
+            _prefixSums[i + 1] = _prefixSums[i] + values[i];
+            _prefixSumOfSquares[i + 1] = _prefixSumOfSquares[i] + values[i] * values[i];
         }
     }
 
@@ -178,7 +165,7 @@ public class KMeans1D
         {
             var cluster = new List<double>();
 
-            var splitIndex = (int)BestSplitIndices[i, k];
+            var splitIndex = (int)_bestSplitIndices[i, k];
 
             for (var j = splitIndex + 1; j <= i; j++)
             {
@@ -193,6 +180,25 @@ public class KMeans1D
         for (var index = clusters.Count - 1; index >= 0; index--)
         {
             yield return clusters[index];
+        }
+    }
+
+    private void InitializeTable(int length, int width)
+    {
+        _dpTable = new double[length, width];
+        _bestSplitIndices = new double[length, width];
+
+        for (var i = 0; i < length; i++)
+        {
+            for (var j = 0; j < width; j++)
+            {
+                if (i == 0 && j == 0)
+                {
+                    continue;
+                }
+
+                _dpTable[i, j] = double.PositiveInfinity;
+            }
         }
     }
 
@@ -241,9 +247,9 @@ public class KMeans1D
     /// </summary>
     internal double ComputeCost(int start, int end)
     {
-        var differenceInPrefixSums = PrefixSums[end] - PrefixSums[start - 1];
+        var differenceInPrefixSums = _prefixSums[end] - _prefixSums[start - 1];
 
-        return PrefixSumOfSquares[end] - PrefixSumOfSquares[start - 1]
+        return _prefixSumOfSquares[end] - _prefixSumOfSquares[start - 1]
             - (differenceInPrefixSums * differenceInPrefixSums / (end - start + 1));
     }
 }
