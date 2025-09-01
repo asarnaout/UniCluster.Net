@@ -12,6 +12,18 @@ public class KMeans1D
 
     public ClusteringResult Fit(double[] values, int numberOfClusters, bool preSortedArray = false)
     {
+        ArgumentNullException.ThrowIfNull(values);
+
+        if (values.Length == 0)
+        {
+            throw new ArgumentException("Input array cannot be empty.", nameof(values));
+        }
+
+        if (numberOfClusters <= 0)
+        {
+            throw new ArgumentException("Number of clusters must be greater than zero.", nameof(numberOfClusters));
+        }
+
         if (numberOfClusters > values.Length)
         {
             throw new ArgumentException("Number of clusters must be less than or equal to the number of values.");

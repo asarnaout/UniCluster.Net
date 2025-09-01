@@ -320,4 +320,368 @@ public class UniClusterTests
         static void AssertAlmost(double actual, double expected, double tol = 1e-9)
             => Assert.True(Math.Abs(actual - expected) <= tol, $"Expected {expected}, got {actual}");
     }
+
+    [Fact]
+    public void Fit_WithValidInput_ShouldReturnCorrectNumberOfClusters()
+    {
+        // Arrange
+        var kmeans = new KMeans1D();
+        double[] values = [1, 2, 3, 8, 9, 10];
+        int numberOfClusters = 2;
+
+        // Act
+        var result = kmeans.Fit(values, numberOfClusters);
+
+        // Assert
+        Assert.Equal(numberOfClusters, result.Clusters.Count);
+        Assert.True(result.TotalCost >= 0);
+    }
+
+    [Fact]
+    public void Fit_WithSingleCluster_ShouldReturnAllPointsInOneCluster()
+    {
+        // Arrange
+        var kmeans = new KMeans1D();
+        double[] values = [5, 2, 8, 1, 9];
+        int numberOfClusters = 1;
+
+        // Act
+        var result = kmeans.Fit(values, numberOfClusters);
+
+        // Assert
+        Assert.Single(result.Clusters);
+        Assert.Equal(values.Length, result.Clusters[0].Points.Count);
+        Assert.Equal(values.Average(), result.Clusters[0].Centroid, 10);
+    }
+
+    [Fact]
+    public void Fit_WithNumberOfClustersEqualToDataSize_ShouldCreateSingletonClusters()
+    {
+        // Arrange
+        var kmeans = new KMeans1D();
+        double[] values = [1, 5, 10, 15];
+        int numberOfClusters = values.Length;
+
+        // Act
+        var result = kmeans.Fit(values, numberOfClusters);
+
+        // Assert
+        Assert.Equal(numberOfClusters, result.Clusters.Count);
+        Assert.Equal(0.0, result.TotalCost, 10); // Each point in its own cluster = 0 cost
+        
+        // Each cluster should have exactly one point
+        foreach (var cluster in result.Clusters)
+        {
+            Assert.Single(cluster.Points);
+            Assert.Equal(cluster.Points[0], cluster.Centroid);
+        }
+    }
+
+    [Fact]
+    public void Fit_WithTooManyClusters_ShouldThrowArgumentException()
+    {
+        // Arrange
+        var kmeans = new KMeans1D();
+        double[] values = [1, 2, 3];
+        int numberOfClusters = 5; // More clusters than data points
+
+        // Act & Assert
+        var exception = Assert.Throws<ArgumentException>(() => kmeans.Fit(values, numberOfClusters));
+        Assert.Contains("Number of clusters must be less than or equal to the number of values", exception.Message);
+    }
+
+    [Fact]
+    public void Fit_WithUnsortedData_ShouldSortAndClusterCorrectly()
+    {
+        // Arrange
+        var kmeans = new KMeans1D();
+        double[] values = [10, 1, 11, 2, 12, 3]; // Unsorted with clear separation
+        int numberOfClusters = 2;
+
+        // Act
+        var result = kmeans.Fit(values, numberOfClusters, preSortedArray: false);
+
+        // Assert
+        Assert.Equal(2, result.Clusters.Count);
+        
+        // Should split into [1,2,3] and [10,11,12]
+        var sortedClusters = result.Clusters.OrderBy(c => c.Centroid).ToList();
+        
+        Assert.Equal(3, sortedClusters[0].Points.Count);
+        Assert.Equal(3, sortedClusters[1].Points.Count);
+        Assert.True(sortedClusters[0].Centroid < sortedClusters[1].Centroid);
+    }
+
+    [Fact]
+    public void Fit_WithPreSortedFlag_ShouldNotResortData()
+    {
+        // Arrange
+        var kmeans = new KMeans1D();
+        double[] values = [1, 2, 3, 10, 11, 12]; // Already sorted
+        int numberOfClusters = 2;
+
+        // Act
+        var result = kmeans.Fit(values, numberOfClusters, preSortedArray: true);
+
+        // Assert
+        Assert.Equal(2, result.Clusters.Count);
+        Assert.Equal(4.0, result.TotalCost, 3); // Expected cost for optimal split
+    }
+
+    [Fact]
+    public void Fit_WithIdenticalValues_ShouldHandleCorrectly()
+    {
+        // Arrange
+        var kmeans = new KMeans1D();
+        double[] values = [5, 5, 5, 5, 5];
+        int numberOfClusters = 3;
+
+        // Act
+        var result = kmeans.Fit(values, numberOfClusters);
+
+        // Assert
+        Assert.Equal(numberOfClusters, result.Clusters.Count);
+        Assert.Equal(0.0, result.TotalCost, 10); // No variance = 0 cost
+        
+        // All centroids should be the same value
+        foreach (var cluster in result.Clusters)
+        {
+            Assert.Equal(5.0, cluster.Centroid, 10);
+        }
+    }
+
+    [Fact]
+    public void Fit_WithNegativeValues_ShouldClusterCorrectly()
+    {
+        // Arrange
+        var kmeans = new KMeans1D();
+        double[] values = [-10, -5, 0, 5, 10];
+        int numberOfClusters = 2;
+
+        // Act
+        var result = kmeans.Fit(values, numberOfClusters);
+
+        // Assert
+        Assert.Equal(2, result.Clusters.Count);
+        Assert.True(result.TotalCost >= 0);
+        
+        // Verify all points are assigned
+        var totalPoints = result.Clusters.Sum(c => c.Points.Count);
+        Assert.Equal(values.Length, totalPoints);
+    }
+
+    [Fact]
+    public void Fit_WithSinglePoint_ShouldCreateSingleCluster()
+    {
+        // Arrange
+        var kmeans = new KMeans1D();
+        double[] values = [42];
+        int numberOfClusters = 1;
+
+        // Act
+        var result = kmeans.Fit(values, numberOfClusters);
+
+        // Assert
+        Assert.Single(result.Clusters);
+        Assert.Single(result.Clusters[0].Points);
+        Assert.Equal(42, result.Clusters[0].Points[0]);
+        Assert.Equal(42, result.Clusters[0].Centroid);
+        Assert.Equal(0.0, result.TotalCost);
+    }
+
+    [Fact]
+    public void Fit_WithLargeGaps_ShouldFindOptimalSeparation()
+    {
+        // Arrange
+        var kmeans = new KMeans1D();
+        double[] values = [1, 2, 100, 101]; // Large gap between 2 and 100
+        int numberOfClusters = 2;
+
+        // Act
+        var result = kmeans.Fit(values, numberOfClusters);
+
+        // Assert
+        Assert.Equal(2, result.Clusters.Count);
+        
+        var sortedClusters = result.Clusters.OrderBy(c => c.Centroid).ToList();
+        
+        // First cluster should contain [1, 2]
+        Assert.Equal(2, sortedClusters[0].Points.Count);
+        Assert.Contains(1.0, sortedClusters[0].Points);
+        Assert.Contains(2.0, sortedClusters[0].Points);
+        
+        // Second cluster should contain [100, 101]
+        Assert.Equal(2, sortedClusters[1].Points.Count);
+        Assert.Contains(100.0, sortedClusters[1].Points);
+        Assert.Contains(101.0, sortedClusters[1].Points);
+    }
+
+    [Fact]
+    public void Fit_ResultClusters_ShouldHaveCorrectCentroids()
+    {
+        // Arrange
+        var kmeans = new KMeans1D();
+        double[] values = [1, 2, 3, 10, 11, 12];
+        int numberOfClusters = 2;
+
+        // Act
+        var result = kmeans.Fit(values, numberOfClusters);
+
+        // Assert
+        foreach (var cluster in result.Clusters)
+        {
+            var expectedCentroid = cluster.Points.Average();
+            Assert.Equal(expectedCentroid, cluster.Centroid, 10);
+        }
+    }
+
+    [Fact]
+    public void Fit_ResultClusters_ShouldContainAllOriginalPoints()
+    {
+        // Arrange
+        var kmeans = new KMeans1D();
+        double[] values = [7, 3, 9, 1, 5, 8, 2];
+        int numberOfClusters = 3;
+
+        // Act
+        var result = kmeans.Fit(values, numberOfClusters);
+
+        // Assert
+        var allAssignedPoints = result.Clusters.SelectMany(c => c.Points).ToList();
+        Assert.Equal(values.Length, allAssignedPoints.Count);
+        
+        // Verify each original point appears exactly once
+        foreach (var value in values)
+        {
+            Assert.Contains(value, allAssignedPoints);
+        }
+    }
+
+    [Fact]
+    public void Fit_WithDecimalValues_ShouldHandlePrecisionCorrectly()
+    {
+        // Arrange
+        var kmeans = new KMeans1D();
+        double[] values = [1.1, 1.2, 1.3, 5.1, 5.2, 5.3];
+        int numberOfClusters = 2;
+
+        // Act
+        var result = kmeans.Fit(values, numberOfClusters);
+
+        // Assert
+        Assert.Equal(2, result.Clusters.Count);
+        
+        var sortedClusters = result.Clusters.OrderBy(c => c.Centroid).ToList();
+        
+        // Verify precision is maintained
+        Assert.Equal(1.2, sortedClusters[0].Centroid, 10); // (1.1 + 1.2 + 1.3) / 3
+        Assert.Equal(5.2, sortedClusters[1].Centroid, 10); // (5.1 + 5.2 + 5.3) / 3
+    }
+
+    [Fact]
+    public void Fit_MonotonicityProperty_MoreClustersShouldNotIncreaseCost()
+    {
+        // Arrange
+        var kmeans = new KMeans1D();
+        double[] values = [1, 3, 5, 7, 9, 11];
+
+        // Act & Assert
+        double previousCost = double.MaxValue;
+        
+        for (int k = 1; k <= values.Length; k++)
+        {
+            var result = kmeans.Fit(values, k);
+            
+            Assert.True(result.TotalCost <= previousCost, 
+                $"Cost with {k} clusters ({result.TotalCost}) should be <= cost with {k-1} clusters ({previousCost})");
+            
+            previousCost = result.TotalCost;
+        }
+    }
+
+    [Fact]
+    public void Fit_DeterministicResults_ShouldProduceSameResultsForSameInput()
+    {
+        // Arrange
+        var kmeans1 = new KMeans1D();
+        var kmeans2 = new KMeans1D();
+        double[] values = [3, 1, 4, 1, 5, 9, 2, 6];
+        int numberOfClusters = 3;
+
+        // Act
+        var result1 = kmeans1.Fit(values, numberOfClusters);
+        var result2 = kmeans2.Fit(values, numberOfClusters);
+
+        // Assert
+        Assert.Equal(result1.TotalCost, result2.TotalCost, 10);
+        Assert.Equal(result1.Clusters.Count, result2.Clusters.Count);
+        
+        // Sort clusters by centroid for comparison
+        var clusters1 = result1.Clusters.OrderBy(c => c.Centroid).ToList();
+        var clusters2 = result2.Clusters.OrderBy(c => c.Centroid).ToList();
+        
+        for (int i = 0; i < clusters1.Count; i++)
+        {
+            Assert.Equal(clusters1[i].Centroid, clusters2[i].Centroid, 10);
+            Assert.Equal(clusters1[i].Points.Count, clusters2[i].Points.Count);
+        }
+    }
+
+    [Fact]
+    public void Fit_OptimalSolution_ShouldBeBetterThanSuboptimalSplit()
+    {
+        // Arrange
+        var kmeans = new KMeans1D();
+        double[] values = [1, 2, 3, 10, 11, 12]; // Clear optimal split at [1,2,3] | [10,11,12]
+        int numberOfClusters = 2;
+
+        // Act
+        var result = kmeans.Fit(values, numberOfClusters);
+
+        // Assert
+        // Manual calculation of optimal cost:
+        // Cluster 1: [1,2,3], mean=2, cost = (1-2)² + (2-2)² + (3-2)² = 1 + 0 + 1 = 2
+        // Cluster 2: [10,11,12], mean=11, cost = (10-11)² + (11-11)² + (12-11)² = 1 + 0 + 1 = 2
+        // Total optimal cost = 4
+        Assert.Equal(4.0, result.TotalCost, 3);
+        
+        // Verify this is better than any suboptimal split
+        // E.g., splitting at [1,2] | [3,10,11,12] would have higher cost
+    }
+
+    [Fact]
+    public void Fit_EmptyInput_ShouldThrowException()
+    {
+        // Arrange
+        var kmeans = new KMeans1D();
+        double[] values = [];
+        int numberOfClusters = 1;
+
+        // Act & Assert
+        Assert.Throws<ArgumentException>(() => kmeans.Fit(values, numberOfClusters));
+    }
+
+    [Fact]
+    public void Fit_ZeroClusters_ShouldThrowException()
+    {
+        // Arrange
+        var kmeans = new KMeans1D();
+        double[] values = [1, 2, 3];
+        int numberOfClusters = 0;
+
+        // Act & Assert
+        Assert.Throws<ArgumentException>(() => kmeans.Fit(values, numberOfClusters));
+    }
+
+    [Fact]
+    public void Fit_NegativeClusters_ShouldThrowException()
+    {
+        // Arrange
+        var kmeans = new KMeans1D();
+        double[] values = [1, 2, 3];
+        int numberOfClusters = -1;
+
+        // Act & Assert
+        Assert.Throws<ArgumentException>(() => kmeans.Fit(values, numberOfClusters));
+    }
 }
