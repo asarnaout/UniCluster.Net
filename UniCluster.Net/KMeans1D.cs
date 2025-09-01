@@ -8,7 +8,9 @@ public class KMeans1D
 
     internal double[,] DpTable = default!;
 
-    public void Fit(double[] values, int numberOfClusters, bool preSortedArray = false)
+    internal double[,] BestSplitIndices = default!;
+
+    public IEnumerable<IEnumerable<double>> Fit(double[] values, int numberOfClusters, bool preSortedArray = false)
     {
         if (numberOfClusters > values.Length)
         {
@@ -22,6 +24,7 @@ public class KMeans1D
 
         ComputePrefixSums(values);
         ComputeClusterCosts(values, numberOfClusters);
+        return Backtrack(values, numberOfClusters).Reverse();
     }
 
     /// <summary>
@@ -90,7 +93,9 @@ public class KMeans1D
                 {
                     var minCost = double.PositiveInfinity;
 
-                    for (var j = k - 1; j <= i - 1; j++)
+                    var j = k - 1;
+
+                    for (; j <= i - 1; j++)
                     {
                         var cost = DpTable[j, k - 1] + ComputeCost(j + 1, i);
                         if (cost < minCost)
@@ -98,6 +103,8 @@ public class KMeans1D
                             minCost = cost;
                         }
                     }
+
+                    BestSplitIndices[i, k] = j;
 
                     DpTable[i, k] = minCost;
                 }
@@ -108,6 +115,7 @@ public class KMeans1D
     private void InitializeTable(int length, int width)
     {
         DpTable = new double[length, width];
+        BestSplitIndices = new double[length, width];
 
         for (var i = 0; i < length; i++)
         {
@@ -132,6 +140,26 @@ public class KMeans1D
         {
             PrefixSums[i + 1] = PrefixSums[i] + values[i];
             PrefixSumOfSquares[i + 1] = PrefixSumOfSquares[i] + values[i] * values[i];
+        }
+    }
+
+    private IEnumerable<IEnumerable<double>> Backtrack(double[] values, int numberOfClusters)
+    {
+        var i = values.Length;
+        for (var k = numberOfClusters; k >= 1; k--)
+        {
+            var cluster = new List<double>();
+
+            var splitIndex = (int)BestSplitIndices[i, k];
+
+            for (var j = splitIndex + 1; j <= i; j++)
+            {
+                cluster.Add(values[j - 1]);
+            }
+
+            i = splitIndex;
+
+            yield return cluster;
         }
     }
 
