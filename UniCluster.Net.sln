@@ -5,6 +5,8 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UniCluster.Net", "UniCluster.Net\UniCluster.Net.csproj", "{2354814B-DA40-474F-A0CC-42FED0F85D33}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UniCluster.Tests", "UniCluster.Tests\UniCluster.Tests.csproj", "{8521003A-ECAC-4DDA-8FF9-636E9F0BA159}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,5 +20,9 @@ Global
 		{2354814B-DA40-474F-A0CC-42FED0F85D33}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2354814B-DA40-474F-A0CC-42FED0F85D33}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2354814B-DA40-474F-A0CC-42FED0F85D33}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8521003A-ECAC-4DDA-8FF9-636E9F0BA159}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8521003A-ECAC-4DDA-8FF9-636E9F0BA159}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8521003A-ECAC-4DDA-8FF9-636E9F0BA159}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8521003A-ECAC-4DDA-8FF9-636E9F0BA159}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
