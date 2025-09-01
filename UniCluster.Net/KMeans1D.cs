@@ -10,7 +10,7 @@ public class KMeans1D
 
     internal double[,] BestSplitIndices = default!;
 
-    public IEnumerable<IEnumerable<double>> Fit(double[] values, int numberOfClusters, bool preSortedArray = false)
+    public ClusteringResult Fit(double[] values, int numberOfClusters, bool preSortedArray = false)
     {
         if (numberOfClusters > values.Length)
         {
@@ -24,7 +24,20 @@ public class KMeans1D
 
         ComputePrefixSums(values);
         ComputeClusterCosts(values, numberOfClusters);
-        return Backtrack(values, numberOfClusters).Reverse();
+
+        var clusterPoints = Backtrack(values, numberOfClusters);
+        var clusters = new List<Cluster>();
+
+        foreach (var clusterPointsList in clusterPoints)
+        {
+            var points = clusterPointsList.ToList();
+            var centroid = points.Average();
+            clusters.Add(new Cluster(points, centroid));
+        }
+
+        var totalCost = DpTable[values.Length, numberOfClusters];
+
+        return new ClusteringResult(clusters, totalCost);
     }
 
     /// <summary>
@@ -93,18 +106,19 @@ public class KMeans1D
                 {
                     var minCost = double.PositiveInfinity;
 
-                    var j = k - 1;
+                    var bestIndex = k - 1;
 
-                    for (; j <= i - 1; j++)
+                    for (var j = k - 1; j <= i - 1; j++)
                     {
                         var cost = DpTable[j, k - 1] + ComputeCost(j + 1, i);
                         if (cost < minCost)
                         {
                             minCost = cost;
+                            bestIndex = j;
                         }
                     }
 
-                    BestSplitIndices[i, k] = j;
+                    BestSplitIndices[i, k] = bestIndex;
 
                     DpTable[i, k] = minCost;
                 }
@@ -145,6 +159,8 @@ public class KMeans1D
 
     private IEnumerable<IEnumerable<double>> Backtrack(double[] values, int numberOfClusters)
     {
+        List<List<double>> clusters = [];
+
         var i = values.Length;
         for (var k = numberOfClusters; k >= 1; k--)
         {
@@ -159,7 +175,12 @@ public class KMeans1D
 
             i = splitIndex;
 
-            yield return cluster;
+            clusters.Add(cluster);
+        }
+
+        for (var index = clusters.Count - 1; index >= 0; index--)
+        {
+            yield return clusters[index];
         }
     }
 
