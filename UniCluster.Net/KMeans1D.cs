@@ -87,6 +87,49 @@ public class KMeans1D
         }
     }
 
+    /// <summary>
+    /// Given a set x_j, x_j+1, x_j+2, ..., x_i
+    /// 
+    /// The cost of clustering this set (will be referred to as "cost(j, i)") is the
+    /// sum of squared distances from each point to the mean of the set.
+    /// 
+    /// Therefore cost(j, i) = Sum[t = j -> i](x_t - mean) ^ 2 --> Equation 1
+    /// 
+    /// The mean of this cluster is (Sum[t = j -> i](x_t)) / n...Where n = i - j + 1. --> Equation 2A
+    /// 
+    /// We can represent this as mean = (Sum[t = j -> i](x_t) / n) which implies that
+    /// 
+    /// n * mean = Sum[t = j -> i](x_t). --> Equation 2B
+    /// 
+    /// Back to Equation 1, if we expand the square it becomes:
+    /// 
+    /// cost(j, i) = Sum[t = j -> i] (x_t^2 - 2 * x_t * mean + mean^2)
+    /// 
+    /// cost(j, i) = (Sum[t = j -> i] (x_t^2)) - (2 * mean * Sum[t = j -> i] (x_t)) + (Sum[t = j -> i] (mean^2))
+    /// 
+    /// For the last part of the equation above, we can simplify Sum[t = j -> i](mean ^ 2) 
+    /// to n * (mean ^ 2) since n = i - j + 1.
+    /// 
+    /// Therefore, the function becomes:
+    /// 
+    /// cost(j, i) = (Sum[t = j -> i] (x_t^2)) - (2 * mean * Sum[t = j -> i] (x_t)) + (n * (mean ^ 2)) --> Equation 3
+    /// 
+    /// If we plug equation 2B into Equation 3 we get:
+    /// 
+    /// cost(j, i) = (Sum[t = j -> i] (x_t^2)) - (2 * n * (mean ^ 2)) + (n * (mean ^ 2))
+    /// 
+    /// cost(j, i) = (Sum[t = j -> i] (x_t^2)) - (n * (mean ^ 2)) --> Equation 5
+    /// 
+    /// If we plug equation 2A into Equation 5 we get:
+    /// 
+    /// cost(j, i) = (Sum[t => j -> i] (x_t^2)) - (((Sum[t => j -> i] (x_t)) ^ 2) / n)
+    /// 
+    /// Replacing n, we get
+    /// 
+    /// cost(j, i) = (Sum[t => j -> i] (x_t^2)) - (((Sum[t => j -> i] (x_t)) ^ 2) / (i - j + 1))
+    /// 
+    /// Which is the cost of clustering the set x_j, x_j+1, ..., x_i into 1 cluster.
+    /// </summary>
     internal double ComputeCost(int start, int end)
     {
         var differenceInPrefixSums = PrefixSums[end] - PrefixSums[start - 1];
