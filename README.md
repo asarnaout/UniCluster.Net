@@ -61,7 +61,7 @@ UniCluster.Net significantly outperforms ML.NET's K-means implementation for 1D 
 
 ### Performance Comparison vs ML.NET
 
-| Dataset Size | Algorithm | Time (ms) | WCSS (Within Cluster Sum of Squares) | Speed Advantage | Quality Note |
+| Dataset Size | Algorithm | Time (ms) | WCSS* | Speed Advantage | Quality Note |
 |-------------|-----------|-----------|------|-----------------|---------------|
 | **100 points, K=3** | UniCluster.Net | 7.53 | 176.4991 | **16.3x faster** | **Identical optimal solution** |
 | | ML.NET | 122.84 | 176.4991 | | Same result |
@@ -69,6 +69,8 @@ UniCluster.Net significantly outperforms ML.NET's K-means implementation for 1D 
 | | ML.NET | 7.58 | 2,192.33 | | Different local optimum |
 | **10,000 points, K=7** | UniCluster.Net | 6.91 | 162,361.89 | **12.0x faster** | **Guaranteed global optimum** |
 | | ML.NET | 82.83 | 87,387.83 | | Different local optimum |
+
+*WCSS = Within Cluster Sum of Squares
 
 ### Key Performance Insights
 
