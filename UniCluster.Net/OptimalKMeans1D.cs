@@ -16,7 +16,7 @@ public class OptimalKMeans1D
 
     internal double[] PrefixSumOfSquares => _prefixSumOfSquares;
 
-    public ClusteringResult Fit(double[] values, int numberOfClusters)
+    public ClusteringResult Fit(double[] values, int k)
     {
         ArgumentNullException.ThrowIfNull(values);
 
@@ -25,22 +25,33 @@ public class OptimalKMeans1D
             throw new ArgumentException("Input array cannot be empty.", nameof(values));
         }
 
-        if (numberOfClusters <= 0)
+        if (k <= 0)
         {
-            throw new ArgumentException("Number of clusters must be greater than zero.", nameof(numberOfClusters));
+            throw new ArgumentException("Number of clusters must be greater than zero.", nameof(k));
         }
 
-        if (numberOfClusters > values.Length)
+        if (k > values.Length)
         {
-            throw new ArgumentException("Number of clusters must be less than or equal to the number of values.", nameof(numberOfClusters));
+            throw new ArgumentException("Number of clusters must be less than or equal to the number of values.", nameof(k));
+        }
+
+        if (values.Any(v => double.IsNaN(v) || double.IsInfinity(v)))
+        {
+            throw new ArgumentException("Input array cannot contain NaN or Infinity values.", nameof(values));
         }
 
         Array.Sort(values);
 
-        ComputePrefixSums(values);
-        ComputeClusterCosts(values, numberOfClusters);
+        if (k == 1)
+        {
+            var centroid = values.Average();
+            return new ClusteringResult([new([..values], centroid)], values.Sum(v => (v - centroid) * (v - centroid)));
+        }
 
-        var clusterPoints = Backtrack(values, numberOfClusters);
+        ComputePrefixSums(values);
+        ComputeClusterCosts(values, k);
+
+        var clusterPoints = Backtrack(values, k);
         var clusters = new List<Cluster>();
 
         foreach (var clusterPointsList in clusterPoints)
@@ -50,7 +61,7 @@ public class OptimalKMeans1D
             clusters.Add(new Cluster(points, centroid));
         }
 
-        var totalCost = _dpTable[values.Length, numberOfClusters];
+        var totalCost = _dpTable[values.Length, k];
 
         return new ClusteringResult(clusters, totalCost);
     }

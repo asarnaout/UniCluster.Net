@@ -289,7 +289,7 @@ public class OptimalKMeans1DTests
         var values = new double[] { 1, 2, 3, 10, 11, 12 };
 
         var kmeans = new OptimalKMeans1D();
-        kmeans.Fit(values, numberOfClusters: 3);
+        kmeans.Fit(values, 3);
 
         var dp = kmeans.DpTable;
 
