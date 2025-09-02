@@ -16,6 +16,64 @@ public class OptimalKMeans1D
 
     internal double[] PrefixSumOfSquares => _prefixSumOfSquares;
 
+    /// <summary>
+    /// Performs optimal 1D K-means clustering on the provided array of values using dynamic programming.
+    /// This method finds the globally optimal clustering solution by minimizing the total within-cluster
+    /// sum of squared distances (WCSS).
+    /// </summary>
+    /// <param name="values">
+    /// The array of numerical values to be clustered. The values can be in any order as they will be
+    /// sorted internally. Must not be null, empty, or contain NaN/Infinity values.
+    /// </param>
+    /// <param name="k">
+    /// The number of clusters to create. Must be a positive integer greater than 0 and less than or
+    /// equal to the number of values in the input array.
+    /// </param>
+    /// <returns>
+    /// A <see cref="ClusteringResult"/> containing the optimal clustering solution with k clusters,
+    /// including the clusters themselves and the total cost (sum of squared distances).
+    /// </returns>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown when <paramref name="values"/> is null.
+    /// </exception>
+    /// <exception cref="ArgumentException">
+    /// Thrown when:
+    /// - <paramref name="values"/> is empty
+    /// - <paramref name="k"/> is less than or equal to 0
+    /// - <paramref name="k"/> is greater than the number of values
+    /// - <paramref name="values"/> contains NaN or Infinity values
+    /// </exception>
+    /// <remarks>
+    /// <para>
+    /// This implementation uses the optimal 1D K-means algorithm based on dynamic programming,
+    /// which guarantees finding the globally optimal solution. The algorithm has a time complexity
+    /// of O(k * n²) where n is the number of data points and k is the number of clusters.
+    /// </para>
+    /// <para>
+    /// The input values are automatically sorted before clustering, so the order of the input
+    /// array does not affect the result. Each resulting cluster will contain contiguous values
+    /// when sorted.
+    /// </para>
+    /// <para>
+    /// For k=1, the method returns a single cluster containing all values with the centroid
+    /// being the arithmetic mean of all values.
+    /// </para>
+    /// <para>
+    /// The algorithm minimizes the within-cluster sum of squares (WCSS), which is equivalent
+    /// to minimizing the sum of squared distances from each point to its cluster centroid.
+    /// </para>
+    /// </remarks>
+    /// <example>
+    /// <code>
+    /// var kmeans = new OptimalKMeans1D();
+    /// var values = new double[] { 1.0, 2.0, 8.0, 9.0, 10.0 };
+    /// var result = kmeans.Fit(values, k: 2);
+    /// 
+    /// // Result will have 2 clusters:
+    /// // Cluster 1: [1.0, 2.0] with centroid 1.5
+    /// // Cluster 2: [8.0, 9.0, 10.0] with centroid 9.0
+    /// </code>
+    /// </example>
     public ClusteringResult Fit(double[] values, int k)
     {
         ArgumentNullException.ThrowIfNull(values);
