@@ -16,7 +16,7 @@ public class OptimalKMeans1D
 
     internal double[] PrefixSumOfSquares => _prefixSumOfSquares;
 
-    public ClusteringResult Fit(double[] values, int numberOfClusters, bool preSortedArray = false)
+    public ClusteringResult Fit(double[] values, int numberOfClusters)
     {
         ArgumentNullException.ThrowIfNull(values);
 
@@ -32,13 +32,10 @@ public class OptimalKMeans1D
 
         if (numberOfClusters > values.Length)
         {
-            throw new ArgumentException("Number of clusters must be less than or equal to the number of values.");
+            throw new ArgumentException("Number of clusters must be less than or equal to the number of values.", nameof(numberOfClusters));
         }
 
-        if (!preSortedArray)
-        {
-            Array.Sort(values);
-        }
+        Array.Sort(values);
 
         ComputePrefixSums(values);
         ComputeClusterCosts(values, numberOfClusters);
