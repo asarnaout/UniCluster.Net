@@ -22,11 +22,8 @@ using UniCluster.Net;
 // Your data points
 var values = new double[] { 1.0, 2.0, 8.0, 9.0, 10.0, 15.0, 16.0 };
 
-// Create clustering instance
-var kmeans = new OptimalKMeans1D();
-
 // Find optimal clustering with 3 clusters
-var result = kmeans.Fit(values, k: 3);
+var result = new OptimalKMeans1D().Fit(values, k: 3);
 
 // Examine results
 Console.WriteLine($"Total cost (WCSS): {result.TotalCost:F2}");
