@@ -8,7 +8,7 @@ public class OptimalKMeans1D
 
     private double[,] _dpTable = default!;
 
-    private double[,] _bestSplitIndices = default!;
+    private int[,] _bestSplitIndices = default!;
 
     internal double[,] DpTable => _dpTable;
 
@@ -177,6 +177,9 @@ public class OptimalKMeans1D
     /// <para>
     /// The minimum of these three values becomes DP(5, 3).
     /// </para>
+    /// The above technique would cause the function to run in O(k * n^2) time complexity. However if we consider the fact that for each k, as 
+    /// i increases, the optimal j value (the j value that results in the least cost) can only increase. Then we can set the j to only move in
+    /// one direction (i.e., never decrease), which causes the algorithm to run in O(k * n) time complexity.
     /// </remarks>
     internal void ComputeClusterCosts(double[] values, int numberOfClusters)
     {
@@ -186,6 +189,8 @@ public class OptimalKMeans1D
 
         for (var k = 1; k < width; k++)
         {
+            var j = k - 1; //Note that j only increases within the same 'k' and is never reset back to k - 1.
+
             for (var i = k; i < length; i++)
             {
                 if (k == 1)
@@ -194,23 +199,20 @@ public class OptimalKMeans1D
                 }
                 else
                 {
-                    var minCost = double.PositiveInfinity;
-
-                    var bestIndex = k - 1;
-
-                    for (var j = k - 1; j <= i - 1; j++)
+                    for (; j <= i - 2; j++)
                     {
-                        var cost = _dpTable[j, k - 1] + ComputeCost(j + 1, i);
-                        if (cost < minCost)
+                        var currentCost = _dpTable[j, k - 1] + ComputeCost(j + 1, i);
+                        var nextCost = _dpTable[j + 1, k - 1] + ComputeCost(j + 2, i);
+
+                        if (nextCost >= currentCost)
                         {
-                            minCost = cost;
-                            bestIndex = j;
+                            break;
                         }
                     }
 
-                    _bestSplitIndices[i, k] = bestIndex;
+                    _bestSplitIndices[i, k] = j;
 
-                    _dpTable[i, k] = minCost;
+                    _dpTable[i, k] = _dpTable[j, k - 1] + ComputeCost(j + 1, i);
                 }
             }
         }
@@ -271,7 +273,7 @@ public class OptimalKMeans1D
     private void InitializeTable(int length, int width)
     {
         _dpTable = new double[length, width];
-        _bestSplitIndices = new double[length, width];
+        _bestSplitIndices = new int[length, width];
 
         for (var i = 0; i < length; i++)
         {
