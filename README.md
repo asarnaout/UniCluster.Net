@@ -1,7 +1,3 @@
-<p align="center">
-    <img src="logo.svg" alt="UniCluster.Net logo" width="420" />
-</p>
-
 # UniCluster.Net
 
 [![.NET](https://img.shields.io/badge/.NET-8.0-blue.svg)](https://dotnet.microsoft.com/download)
