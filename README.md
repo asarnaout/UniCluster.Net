@@ -76,7 +76,7 @@ UniCluster.Net significantly outperforms ML.NET's K-means implementation for 1D 
 
 - **🚄 Speed**: UniCluster.Net is **12-16x faster** than ML.NET for 1D clustering
 - **🎯 Quality**: UniCluster.Net **guarantees globally optimal solutions** for 1D data. ML.NET may find different local optima that could have lower or higher WCSS depending on data structure and initialization
-- **🔒 Stability**: UniCluster.Net is **100% deterministic** (Std Dev: 0.000000), while ML.NET results vary significantly (Std Dev: 47.08)
+- **🔒 Stability**: UniCluster.Net is **100% deterministic** (Std Dev: 0), while ML.NET results vary significantly (Std Dev: 47.08)
 - **📈 Scalability**: Performance advantage increases with dataset size
 - **🎲 Initialization**: UniCluster.Net requires no parameter tuning, while ML.NET results depend on random initialization
 
