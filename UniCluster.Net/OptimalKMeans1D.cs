@@ -177,9 +177,24 @@ public class OptimalKMeans1D
     /// <para>
     /// The minimum of these three values becomes DP(5, 3).
     /// </para>
-    /// The above technique would cause the function to run in O(k * n^2) time complexity. However if we consider the fact that for each k, as 
-    /// i increases, the optimal j value (the j value that results in the least cost) can only increase. Then we can set the j to only move in
-    /// one direction (i.e., never decrease), which causes the algorithm to run in O(k * n) time complexity.
+    /// <para>
+    /// This straightforward dynamic programming solution evaluates, for each state (i, k),
+    /// all possible split positions j ∈ [k−1, i−1] which leads to O(k·n²) time overall,
+    /// since each of the n·k states scans up to O(n) candidates.
+    /// </para>
+    /// <para>
+    /// However, in 1D K-Means, the cost function satisfies a <em>monotonicity property</em>: 
+    /// as i increases, the optimal split index j* that minimizes
+    /// DP(j, k−1) + cost(j+1..i)
+    /// can only move to the right (non-decreasing). It never shifts left when more points
+    /// are included (i.e: The optimal j never decreases as i increases).
+    /// </para>
+    /// <para>
+    /// Exploiting this property allows us to carry forward the previous optimal split index
+    /// and only advance it when it reduces the cost. Since j* advances monotonically across i,
+    /// each index is examined at most once per cluster count k. This reduces the per-row cost
+    /// from O(n²) to O(n), resulting in an overall complexity of O(k·n).
+    /// </para>
     /// </remarks>
     internal void ComputeClusterCosts(double[] values, int numberOfClusters)
     {
