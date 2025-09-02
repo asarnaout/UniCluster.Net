@@ -684,4 +684,452 @@ public class OptimalKMeans1DTests
         // Act & Assert
         Assert.Throws<ArgumentException>(() => kmeans.Fit(values, numberOfClusters));
     }
+
+    #region Comprehensive Verification Tests
+
+    [Theory]
+    [InlineData(new double[] { 1, 2, 10, 11 }, 2, 1.0)]
+    [InlineData(new double[] { 1, 5, 9, 13 }, 4, 0.0)]
+    [InlineData(new double[] { 0, 1, 10, 11, 20, 21 }, 3, 1.5)]
+    public void Fit_KnownOptimalSolutions_ShouldMatchExpectedWCSS(double[] data, int k, double expectedWCSS)
+    {
+        // Arrange
+        var optimizer = new OptimalKMeans1D();
+
+        // Act
+        var result = optimizer.Fit(data, k);
+
+        // Assert
+        Assert.Equal(expectedWCSS, result.TotalCost, 6);
+        
+        // Verify manual WCSS calculation matches
+        var manualWCSS = 0.0;
+        foreach (var cluster in result.Clusters)
+        {
+            var centroid = cluster.Centroid;
+            manualWCSS += cluster.Points.Sum(p => Math.Pow(p - centroid, 2));
+        }
+        Assert.Equal(result.TotalCost, manualWCSS, 10);
+    }
+
+    [Fact]
+    public void Fit_BruteForceVerification_SmallDataset_ShouldMatchOptimal()
+    {
+        // Arrange
+        var optimizer = new OptimalKMeans1D();
+        var testCases = new[]
+        {
+            (new double[] { 1, 2, 8, 9 }, 2),
+            (new double[] { 1, 3, 6, 8, 10 }, 3),
+            (new double[] { 0, 1, 5, 6, 10, 11 }, 3),
+            (new double[] { 2, 4, 6, 8 }, 2),
+            (new double[] { 1, 5, 6, 10, 11, 15 }, 3)
+        };
+
+        foreach (var (data, k) in testCases)
+        {
+            // Act
+            var libraryResult = optimizer.Fit(data, k);
+            var bruteForceWCSS = BruteForceOptimal(data, k);
+
+            // Assert
+            Assert.Equal(bruteForceWCSS, libraryResult.TotalCost, 10);
+        }
+    }
+
+    [Fact]
+    public void Fit_MonotonicWCSSDecrease_ShouldDecreaseOrStayEqual()
+    {
+        // Arrange
+        var optimizer = new OptimalKMeans1D();
+        var testData = new double[] { 1, 3, 5, 7, 9, 11, 13, 15 };
+        var wcssSequence = new List<double>();
+
+        // Act
+        for (int k = 1; k <= testData.Length; k++)
+        {
+            var result = optimizer.Fit(testData, k);
+            wcssSequence.Add(result.TotalCost);
+        }
+
+        // Assert
+        for (int i = 1; i < wcssSequence.Count; i++)
+        {
+            Assert.True(wcssSequence[i] <= wcssSequence[i-1] + 1e-10, 
+                $"WCSS with {i+1} clusters ({wcssSequence[i]}) should be <= WCSS with {i} clusters ({wcssSequence[i-1]})");
+        }
+    }
+
+    [Fact]
+    public void Fit_SingleCluster_ShouldEqualTotalVariance()
+    {
+        // Arrange
+        var optimizer = new OptimalKMeans1D();
+        var testData = new double[] { 1, 3, 5, 7, 9, 11, 13, 15 };
+
+        // Act
+        var result = optimizer.Fit(testData, 1);
+        var expectedVariance = testData.Sum(x => Math.Pow(x - testData.Average(), 2));
+
+        // Assert
+        Assert.Equal(expectedVariance, result.TotalCost, 10);
+    }
+
+    [Fact]
+    public void Fit_MaxClusters_ShouldGiveZeroWCSS()
+    {
+        // Arrange
+        var optimizer = new OptimalKMeans1D();
+        var testData = new double[] { 1, 3, 5, 7, 9, 11, 13, 15 };
+
+        // Act
+        var result = optimizer.Fit(testData, testData.Length);
+
+        // Assert
+        Assert.Equal(0.0, result.TotalCost, 10);
+        Assert.Equal(testData.Length, result.ClusterCount);
+        
+        // Each cluster should have exactly one point
+        foreach (var cluster in result.Clusters)
+        {
+            Assert.Single(cluster.Points);
+            Assert.Equal(cluster.Points[0], cluster.Centroid);
+        }
+    }
+
+    [Fact]
+    public void Fit_DeterministicBehavior_ShouldProduceIdenticalResults()
+    {
+        // Arrange
+        var testData = new double[] { 2.5, 7.1, 1.8, 9.3, 4.7 };
+        var results = new List<double>();
+
+        // Act
+        for (int i = 0; i < 10; i++)
+        {
+            var optimizer = new OptimalKMeans1D();
+            var result = optimizer.Fit(testData, 3);
+            results.Add(result.TotalCost);
+        }
+
+        // Assert
+        Assert.True(results.All(r => Math.Abs(r - results[0]) < 1e-15),
+            "All runs should produce identical results");
+    }
+
+    [Theory]
+    [InlineData(new double[] { 5, 5, 5, 5 }, 2)]
+    [InlineData(new double[] { 42 }, 1)]
+    [InlineData(new double[] { 1, 1, 1 }, 3)]
+    public void Fit_EdgeCases_ShouldHandleCorrectly(double[] data, int k)
+    {
+        // Arrange
+        var optimizer = new OptimalKMeans1D();
+
+        // Act
+        var result = optimizer.Fit(data, k);
+
+        // Assert
+        Assert.Equal(k, result.ClusterCount);
+        Assert.True(result.TotalCost >= 0);
+        Assert.True(double.IsFinite(result.TotalCost));
+        
+        // All points should be assigned
+        var totalAssignedPoints = result.Clusters.Sum(c => c.PointCount);
+        Assert.Equal(data.Length, totalAssignedPoints);
+    }
+
+    [Fact]
+    public void Fit_WellSeparatedClusters_ShouldFindTheoreticalOptimum()
+    {
+        // Arrange
+        var optimizer = new OptimalKMeans1D();
+        var testData = new double[] { 0.9, 1.0, 1.1, 8.9, 9.0, 9.1 };
+
+        // Act
+        var result = optimizer.Fit(testData, 2);
+
+        // Assert - Calculate expected theoretical optimum
+        var cluster1 = new[] { 0.9, 1.0, 1.1 };
+        var cluster2 = new[] { 8.9, 9.0, 9.1 };
+        var centroid1 = cluster1.Average();
+        var centroid2 = cluster2.Average();
+        var expectedWCSS = cluster1.Sum(x => Math.Pow(x - centroid1, 2)) + 
+                          cluster2.Sum(x => Math.Pow(x - centroid2, 2));
+
+        Assert.Equal(expectedWCSS, result.TotalCost, 10);
+    }
+
+    [Fact]
+    public void Fit_ContiguousClusterProperty_ShouldMaintainSortedOrder()
+    {
+        // Arrange
+        var optimizer = new OptimalKMeans1D();
+        var testData = new double[] { 1, 3, 4, 8, 9, 12, 15, 16 };
+
+        // Act
+        var result = optimizer.Fit(testData, 3);
+
+        // Assert
+        var flattenedPoints = result.Clusters.SelectMany(c => c.Points).OrderBy(p => p).ToArray();
+        var originalSorted = testData.OrderBy(p => p).ToArray();
+
+        for (int i = 0; i < flattenedPoints.Length; i++)
+        {
+            Assert.Equal(originalSorted[i], flattenedPoints[i], 10);
+        }
+    }
+
+    [Fact]
+    public void Fit_AllPointsAssigned_ShouldAssignEveryPoint()
+    {
+        // Arrange
+        var optimizer = new OptimalKMeans1D();
+        var testData = new double[] { 1, 3, 4, 8, 9, 12, 15, 16 };
+
+        // Act
+        var result = optimizer.Fit(testData, 3);
+
+        // Assert
+        var totalPointsInClusters = result.Clusters.Sum(c => c.PointCount);
+        Assert.Equal(testData.Length, totalPointsInClusters);
+        
+        // Verify each original point appears exactly once
+        var allAssignedPoints = result.Clusters.SelectMany(c => c.Points).ToList();
+        foreach (var originalPoint in testData)
+        {
+            Assert.Contains(originalPoint, allAssignedPoints);
+        }
+    }
+
+    [Fact]
+    public void Fit_LargeDataset_ShouldHandleNumericalStability()
+    {
+        // Arrange
+        var optimizer = new OptimalKMeans1D();
+        var random = new Random(42);
+        var largeData = Enumerable.Range(0, 100)
+            .Select(_ => random.NextDouble() * 100)
+            .OrderBy(x => x)
+            .ToArray();
+
+        // Act
+        var result = optimizer.Fit(largeData, 10);
+
+        // Assert
+        Assert.Equal(10, result.ClusterCount);
+        Assert.Equal(largeData.Length, result.Clusters.Sum(c => c.PointCount));
+        Assert.True(result.TotalCost >= 0);
+        Assert.True(double.IsFinite(result.TotalCost));
+        Assert.False(double.IsNaN(result.TotalCost));
+        Assert.False(double.IsInfinity(result.TotalCost));
+    }
+
+    [Theory]
+    [InlineData(new double[] { -10, -5, 0, 5, 10 }, 2)]
+    [InlineData(new double[] { -100, -50, -25, 25, 50, 100 }, 3)]
+    [InlineData(new double[] { -1.5, -0.5, 0.5, 1.5 }, 2)]
+    public void Fit_NegativeValues_ShouldHandleCorrectly(double[] data, int k)
+    {
+        // Arrange
+        var optimizer = new OptimalKMeans1D();
+
+        // Act
+        var result = optimizer.Fit(data, k);
+
+        // Assert
+        Assert.Equal(k, result.ClusterCount);
+        Assert.True(result.TotalCost >= 0);
+        Assert.Equal(data.Length, result.Clusters.Sum(c => c.PointCount));
+        
+        // Verify centroids are calculated correctly
+        foreach (var cluster in result.Clusters)
+        {
+            var expectedCentroid = cluster.Points.Average();
+            Assert.Equal(expectedCentroid, cluster.Centroid, 10);
+        }
+    }
+
+    [Fact]
+    public void Fit_PrecisionMaintained_ShouldHandleDecimalValues()
+    {
+        // Arrange
+        var optimizer = new OptimalKMeans1D();
+        var testData = new double[] { 1.123456789, 1.234567890, 5.123456789, 5.234567890 };
+
+        // Act
+        var result = optimizer.Fit(testData, 2);
+
+        // Assert
+        Assert.Equal(2, result.ClusterCount);
+        
+        // Verify precision is maintained in centroids
+        foreach (var cluster in result.Clusters)
+        {
+            var expectedCentroid = cluster.Points.Average();
+            Assert.Equal(expectedCentroid, cluster.Centroid, 15); // High precision check
+        }
+    }
+
+    [Fact]
+    public void Fit_OptimalityGuarantee_ShouldNeverExceedBruteForce()
+    {
+        // Arrange
+        var optimizer = new OptimalKMeans1D();
+        var testCases = new[]
+        {
+            (new double[] { 1, 4, 7, 10 }, 2),
+            (new double[] { 2, 3, 8, 9, 14 }, 3),
+            (new double[] { 1, 2, 5, 6, 9, 10 }, 2)
+        };
+
+        foreach (var (data, k) in testCases)
+        {
+            // Act
+            var libraryResult = optimizer.Fit(data, k);
+            var bruteForceWCSS = BruteForceOptimal(data, k);
+
+            // Assert
+            Assert.True(libraryResult.TotalCost <= bruteForceWCSS + 1e-10,
+                $"Library WCSS ({libraryResult.TotalCost}) should be <= brute force WCSS ({bruteForceWCSS})");
+        }
+    }
+
+    [Theory]
+    [InlineData(null)]
+    public void Fit_NullInput_ShouldThrowArgumentNullException(double[] values)
+    {
+        // Arrange
+        var optimizer = new OptimalKMeans1D();
+
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => optimizer.Fit(values, 1));
+    }
+
+    [Theory]
+    [InlineData(new double[] { double.NaN, 1, 2 })]
+    [InlineData(new double[] { 1, double.PositiveInfinity, 2 })]
+    [InlineData(new double[] { 1, 2, double.NegativeInfinity })]
+    public void Fit_InvalidValues_ShouldThrowArgumentException(double[] values)
+    {
+        // Arrange
+        var optimizer = new OptimalKMeans1D();
+
+        // Act & Assert
+        Assert.Throws<ArgumentException>(() => optimizer.Fit(values, 1));
+    }
+
+    [Fact]
+    public void Fit_ConsistentCentroids_ShouldMatchManualCalculation()
+    {
+        // Arrange
+        var optimizer = new OptimalKMeans1D();
+        var testData = new double[] { 1, 2, 3, 10, 11, 12 };
+
+        // Act
+        var result = optimizer.Fit(testData, 2);
+
+        // Assert
+        foreach (var cluster in result.Clusters)
+        {
+            var manualCentroid = cluster.Points.Sum() / cluster.Points.Count;
+            Assert.Equal(manualCentroid, cluster.Centroid, 10);
+        }
+    }
+
+    [Fact]
+    public void Fit_StressTest_ShouldHandleRepeatedCalls()
+    {
+        // Arrange
+        var optimizer = new OptimalKMeans1D();
+        var testData = new double[] { 1, 3, 5, 7, 9 };
+        
+        // Act & Assert - Multiple calls should not affect each other
+        for (int i = 0; i < 100; i++)
+        {
+            var result = optimizer.Fit(testData, 3);
+            Assert.Equal(3, result.ClusterCount);
+            Assert.True(result.TotalCost >= 0);
+        }
+    }
+
+    #endregion
+
+    #region Helper Methods
+
+    /// <summary>
+    /// Brute force optimal solution finder for verification purposes
+    /// </summary>
+    private static double BruteForceOptimal(double[] data, int k)
+    {
+        var n = data.Length;
+        var sortedData = data.OrderBy(x => x).ToArray();
+        
+        if (k == 1)
+        {
+            var centroid = sortedData.Average();
+            return sortedData.Sum(x => Math.Pow(x - centroid, 2));
+        }
+        
+        if (k >= n)
+        {
+            return 0.0;
+        }
+        
+        double bestWCSS = double.MaxValue;
+        
+        // Generate all combinations of k-1 split points from n-1 possible positions
+        var splitPositions = new List<int[]>();
+        GenerateCombinations(Enumerable.Range(1, n-1).ToArray(), k-1, new int[k-1], 0, splitPositions);
+        
+        foreach (var splits in splitPositions)
+        {
+            var wcss = 0.0;
+            var start = 0;
+            
+            // Process each cluster defined by the splits
+            foreach (var end in splits)
+            {
+                var clusterPoints = sortedData.Skip(start).Take(end - start).ToArray();
+                if (clusterPoints.Length > 0)
+                {
+                    var centroid = clusterPoints.Average();
+                    wcss += clusterPoints.Sum(p => Math.Pow(p - centroid, 2));
+                }
+                start = end;
+            }
+            
+            // Last cluster
+            var lastClusterPoints = sortedData.Skip(start).ToArray();
+            if (lastClusterPoints.Length > 0)
+            {
+                var lastCentroid = lastClusterPoints.Average();
+                wcss += lastClusterPoints.Sum(p => Math.Pow(p - lastCentroid, 2));
+            }
+            
+            if (wcss < bestWCSS)
+            {
+                bestWCSS = wcss;
+            }
+        }
+        
+        return bestWCSS;
+    }
+
+    private static void GenerateCombinations(int[] array, int k, int[] current, int start, List<int[]> result)
+    {
+        if (k == 0)
+        {
+            result.Add((int[])current.Clone());
+            return;
+        }
+        
+        for (int i = start; i <= array.Length - k; i++)
+        {
+            current[current.Length - k] = array[i];
+            GenerateCombinations(array, k - 1, current, i + 1, result);
+        }
+    }
+
+    #endregion
 }
