@@ -125,53 +125,59 @@ public class OptimalKMeans1D
     }
 
     /// <summary>
-    /// Uses dynamic programming to compute the cost of clustering different combinations
-    /// of i points into k clusters.
+    /// Uses dynamic programming to compute the optimal cost of clustering different 
+    /// combinations of i points into k clusters.
+    /// </summary>
+    /// <remarks>
+    /// <para><strong>Core Concept:</strong></para>
+    /// <para>
+    /// The <see cref="ComputeCost(int, int)"/> function computes the cost of clustering 
+    /// a contiguous set x[j], x[j+1], x[j+2], ..., x[i] into a single cluster.
+    /// </para>
     /// 
-    /// The function <see cref="ComputeCost(int, int)"/> is used to compute the cost of clustering
-    /// a set x[j], x[j+1], x[j+2], ..., x[i] into 1 cluster.
+    /// <para><strong>Base Case (k=1):</strong></para>
+    /// <para>
+    /// For k = 1 and i = [1 → number of values]: DP(i, 1) = cost(1, i)
+    /// <br/>This represents clustering i points into 1 cluster.
+    /// </para>
     /// 
-    /// Therefore we can safely assume that for k = 1, and i = [1 -> number of values],
-    /// then DP(i, k) = cost(i, 1). This is the cost of clustering i points into 1 cluster.
+    /// <para><strong>Recursive Case (k > 1):</strong></para>
+    /// <para>
+    /// DP(i, k) = min(for j = [k-1] → [i-1]: [DP(j, k-1) + cost(j+1, i)])
+    /// </para>
+    /// <para>
+    /// Where:
+    /// <br/>• DP(j, k-1) = optimal cost of first j points in k-1 clusters
+    /// <br/>• cost(j+1, i) = cost of clustering points [j+1..i] into one cluster
+    /// </para>
     /// 
-    /// As k grows beyond 1 (1 &lt;= k &lt;= number of clusters), we can use the previously computed
-    /// values to find the optimal cost as follows:
-    /// 
-    /// DP(i, k) = min(for j = [k - 1] -> [i - 1]: [DP(j, k-1) + cost(j+1, i)])
-    /// 
-    /// because DP(j, k-1) is the optimal cost of the first j points in k-1 clusters, 
-    /// 
-    /// and cost(j+1, i) is the cost of putting the next block [j+1..i] into one cluster.
-    /// 
-    /// Consider the following, for k = 3, i = 5
-    /// 
-    /// To calculate DP(5, 3) marked as an X in the table below:
-    /// 
-    ///  k 0 1 2 3
+    /// <para><strong>Example: Computing DP(5, 3)</strong></para>
+    /// <para>
+    /// Consider finding the optimal cost of clustering 5 points into 3 clusters:
+    /// </para>
+    /// <code>
+    ///   k  0  1  2  3
     /// i  
     /// 0
     /// 1        
-    /// 2      A
-    /// 3      B 
-    /// 4      C  
-    /// 5        X
-    /// 
-    /// we consider j = {2, 3, 4} (since j goes from k -1 to i -1) and therefore
-    /// we consider the cells DP(2, 2), DP(3, 2), DP(4, 2), marked as A, B and C
-    /// respectively.
-    /// 
-    /// which means that if we want to find the OPTIMAL cost of clustering 5 points into 3
-    /// clusters, then we need to consider: 
-    /// - The precalculated OPTIMAL cost of clustering 4 points into 2 clusters + the cost
-    /// of clustering 1 point into 1 cluster.
-    /// - The precalculated OPTIMAL cost of clustering 3 points into 2 clusters + the cost
-    /// of clustering 2 points into 1 cluster.
-    /// - The precalculated OPTIMAL cost of clustering 2 points into 2 clusters + the cost
-    /// of clustering 3 points into 1 cluster.
-    /// 
-    /// and finding the smallest value from the latter 3 values to represent the optimal
-    /// cost of DP(5, 3)
-    /// </summary>
+    /// 2          A
+    /// 3          B 
+    /// 4          C  
+    /// 5             X
+    /// </code>
+    /// <para>
+    /// To calculate DP(5, 3) [marked as X], we evaluate j ∈ {2, 3, 4} and consider:
+    /// <br/>
+    /// <br/>• DP(2, 2) + cost(3, 5) [cell A (precomputed optimal cost of clustering 2 points into 2 clusters) + cost of 3 points in 1 cluster]
+    /// <br/>
+    /// <br/>• DP(3, 2) + cost(4, 5) [cell B (precomputed optimal cost of clustering 3 points into 2 clusters) + cost of 2 points in 1 cluster]  
+    /// <br/>
+    /// <br/>• DP(4, 2) + cost(5, 5) [cell C (precomputed optimal cost of clustering 4 points into 2 clusters) + cost of 1 point in 1 cluster]
+    /// </para>
+    /// <para>
+    /// The minimum of these three values becomes DP(5, 3).
+    /// </para>
+    /// </remarks>
     internal void ComputeClusterCosts(double[] values, int numberOfClusters)
     {
         int length = values.Length + 1, width = numberOfClusters + 1;
@@ -222,6 +228,19 @@ public class OptimalKMeans1D
         }
     }
 
+    /// <summary>
+    /// Reconstructs the optimal clustering solution by backtracking through the dynamic programming table.
+    /// </summary>
+    /// <param name="values">The sorted array of values that were clustered.</param>
+    /// <param name="numberOfClusters">The number of clusters to reconstruct.</param>
+    /// <returns>
+    /// An enumerable of clusters, where each cluster is an enumerable of double values.
+    /// Clusters are returned in the order they appear in the sorted values array.
+    /// </returns>
+    /// <remarks>
+    /// Uses the <see cref="_bestSplitIndices"/> table computed during the dynamic programming phase
+    /// to determine the optimal split points and reconstruct the actual cluster assignments.
+    /// </remarks>
     private IEnumerable<IEnumerable<double>> Backtrack(double[] values, int numberOfClusters)
     {
         List<List<double>> clusters = [];
