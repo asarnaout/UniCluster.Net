@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 140" width="600" height="140" role="img" aria-labelledby="titleDesc">
+  <title id="titleDesc">UniCluster.Net logo — optimal 1D k-means</title>
+  <rect width="100%" height="100%" fill="#FFFFFF"/>
+
+  <!-- axis -->
+  <line x1="40" y1="60" x2="560" y2="60" stroke="#CBD5E1" stroke-width="4" stroke-linecap="round"/>
+
+  <!-- cluster 1 (blue) -->
+  <g fill="#2563EB" stroke="#fff" stroke-width="1.5">
+    <circle cx="110" cy="60" r="6"/>
+    <circle cx="140" cy="60" r="6"/>
+    <!-- centroid -->
+    <circle cx="125" cy="60" r="10" fill="#2563EB" stroke="#082A7A" stroke-width="1.2"/>
+  </g>
+
+  <!-- cluster 2 (orange) -->
+  <g fill="#F97316" stroke="#fff" stroke-width="1.5">
+    <circle cx="270" cy="60" r="6"/>
+    <circle cx="300" cy="60" r="6"/>
+    <circle cx="330" cy="60" r="6"/>
+    <!-- centroid -->
+    <circle cx="300" cy="60" r="10" fill="#F97316" stroke="#7A3606" stroke-width="1.2"/>
+  </g>
+
+  <!-- cluster 3 (teal) -->
+  <g fill="#14B8A6" stroke="#fff" stroke-width="1.5">
+    <circle cx="430" cy="60" r="6"/>
+    <circle cx="460" cy="60" r="6"/>
+    <!-- centroid -->
+    <circle cx="445" cy="60" r="10" fill="#14B8A6" stroke="#0B5B52" stroke-width="1.2"/>
+  </g>
+
+  <!-- subtle separators (monotonic DP idea) -->
+  <g stroke="#94A3B8" stroke-width="1" stroke-dasharray="3 4">
+    <line x1="170" y1="30" x2="170" y2="90"/>
+    <line x1="365" y1="30" x2="365" y2="90"/>
+  </g>
+
+  
+
+  <!-- text: brand -->
+  <text x="37" y="122" font-family="Segoe UI Variable, Segoe UI, Inter, Roboto, Helvetica Neue, Arial, sans-serif" font-size="26" fill="#101828" font-weight="700">
+    <tspan>UniCluster</tspan><tspan fill="#2563EB">.Net</tspan>
+  </text>
+
+</svg>
