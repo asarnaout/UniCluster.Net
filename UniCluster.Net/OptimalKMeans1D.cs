@@ -134,7 +134,7 @@ public class OptimalKMeans1D
     /// Therefore we can safely assume that for k = 1, and i = [1 -> number of values],
     /// then DP(i, k) = cost(i, 1). This is the cost of clustering i points into 1 cluster.
     /// 
-    /// As k grows beyond 1 (1 <= k <= number of clusters), we can use the previously computed
+    /// As k grows beyond 1 (1 &lt;= k &lt;= number of clusters), we can use the previously computed
     /// values to find the optimal cost as follows:
     /// 
     /// DP(i, k) = min(for j = [k - 1] -> [i - 1]: [DP(j, k-1) + cost(j+1, i)])
