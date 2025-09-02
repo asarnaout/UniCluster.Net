@@ -269,47 +269,76 @@ public class OptimalKMeans1D
     }
 
     /// <summary>
-    /// Given a set x[j], x[j+1], x[j+2], ..., x[i]
+    /// Computes the cost of clustering a contiguous subset of values into a single cluster.
     /// 
-    /// The cost of clustering this set (will be referred to as "cost(j, i)") is the
-    /// sum of squared distances from each point to the mean of the set.
+    /// <para><strong>Problem:</strong> Given a set x[j], x[j+1], x[j+2], ..., x[i]</para>
     /// 
-    /// Therefore cost(j, i) = Sum[t = j -> i](x[t] - mean) ^ 2 --> Equation 1
+    /// <para>
+    /// The cost of clustering this set (referred to as 'cost(j, i)') is the sum of squared
+    /// distances from each point to the mean of the set.
+    /// </para>
     /// 
-    /// The mean of this cluster is (Sum[t = j -> i](x[t])) / n...Where n = i - j + 1. --> Equation 2A
+    /// <para><strong>Mathematical Derivation:</strong></para>
     /// 
-    /// We can represent this as mean = (Sum[t = j -> i](x[t]) / n) which implies that
+    /// <para>
+    /// <strong>Equation 1:</strong> cost(j, i) = Σ(t=j to i) (x[t] - μ)²
+    /// </para>
     /// 
-    /// n * mean = Sum[t = j -> i](x[t]). --> Equation 2B
+    /// <para>
+    /// <strong>Equation 2A:</strong> μ = (Σ(t=j to i) x[t]) / n, where n = i - j + 1 ['n' is the size of the set]
+    /// </para>
     /// 
-    /// Back to Equation 1, if we expand the square it becomes:
+    /// <para>
+    /// <strong>Equation 2B:</strong> n * μ = Σ(t=j to i) x[t]
+    /// </para>
     /// 
-    /// cost(j, i) = Sum[t = j -> i] (x[t]^2 - 2 * x[t] * mean + mean^2)
+    /// <para>
+    /// Expanding the square in Equation 1:
+    /// </para>
     /// 
-    /// cost(j, i) = (Sum[t = j -> i] (x[t]^2)) - (2 * mean * Sum[t = j -> i] (x[t])) + (Sum[t = j -> i] (mean^2))
+    /// <para>
+    /// cost(j, i) = Σ(t=j to i) (x[t]² - 2 * x[t] * μ + μ²)
+    /// </para>
     /// 
-    /// For the last part of the equation above, we can simplify Sum[t = j -> i](mean ^ 2) 
-    /// to n * (mean ^ 2) since n = i - j + 1.
+    /// <para>
+    /// cost(j, i) = (Σ(t=j to i) x[t]²) - (2 * μ * Σ(t=j to i) x[t]) + (Σ(t=j to i) μ²)
+    /// </para>
     /// 
-    /// Therefore, the function becomes:
+    /// <para>
+    /// Since μ is constant, Σ(t=j to i) μ² simplifies to n * μ² [Recall that 'n' is the size of the set]
+    /// </para>
     /// 
-    /// cost(j, i) = (Sum[t = j -> i] (x[t]^2)) - (2 * mean * Sum[t = j -> i] (x[t])) + (n * (mean ^ 2)) --> Equation 3
+    /// <para>
+    /// <strong>Equation 3:</strong> cost(j, i) = (Σ(t=j to i) x[t]²) - (2 * μ * Σ(t=j to i) x[t]) + (n * μ²)
+    /// </para>
     /// 
-    /// If we plug equation 2B into Equation 3 we get:
+    /// <para>
+    /// Substituting Equation 2B into Equation 3:
+    /// </para>
     /// 
-    /// cost(j, i) = (Sum[t = j -> i] (x[t]^2)) - (2 * n * (mean ^ 2)) + (n * (mean ^ 2))
+    /// <para>
+    /// cost(j, i) = (Σ(t=j to i) x[t]²) - (2 * n * μ²) + (n * μ²)
+    /// </para>
     /// 
-    /// cost(j, i) = (Sum[t = j -> i] (x[t]^2)) - (n * (mean ^ 2)) --> Equation 5
+    /// <para>
+    /// <strong>Equation 5:</strong> cost(j, i) = (Σ(t=j to i) x[t]²) - (n * μ²)
+    /// </para>
     /// 
-    /// If we plug equation 2A into Equation 5 we get:
+    /// <para>
+    /// Substituting Equation 2A into Equation 5:
+    /// </para>
     /// 
-    /// cost(j, i) = (Sum[t => j -> i] (x[t]^2)) - (((Sum[t => j -> i] (x[t])) ^ 2) / n)
+    /// <para>
+    /// cost(j, i) = (Σ(t=j to i) x[t]²) - (((Σ(t=j to i) x[t])²) / n)
+    /// </para>
     /// 
-    /// Replacing n, we get
+    /// <para>
+    /// <strong>Final Formula:</strong> cost(j, i) = (Σ(t=j to i) x[t]²) - (((Σ(t=j to i) x[t])²) / (i - j + 1))
+    /// </para>
     /// 
-    /// cost(j, i) = (Sum[t => j -> i] (x[t]^2)) - (((Sum[t => j -> i] (x[t])) ^ 2) / (i - j + 1))
-    /// 
-    /// Which is the cost of clustering the set x_j, x_j+1, ..., x_i into 1 cluster.
+    /// <para>
+    /// This represents the cost of clustering the contiguous set x[j], x[j+1], ..., x[i] into 1 cluster.
+    /// </para>
     /// </summary>
     internal double ComputeCost(int start, int end)
     {
