@@ -26,7 +26,7 @@ var values = new double[] { 1.0, 2.0, 8.0, 9.0, 10.0, 15.0, 16.0 };
 var result = new OptimalKMeans1D().Fit(values, k: 3);
 
 // Examine results
-Console.WriteLine($"Total cost (WCSS): {result.TotalCost:F2}");
+Console.WriteLine($"Total cost (WCSS - Within Cluster Sum of Squares): {result.TotalCost:F2}");
 Console.WriteLine($"Number of clusters: {result.ClusterCount}");
 
 foreach (var cluster in result.Clusters)
@@ -40,7 +40,7 @@ foreach (var cluster in result.Clusters)
 
 **Output:**
 ```
-Total cost (WCSS): 2.67
+Total cost (WCSS - Within Cluster Sum of Squares): 2.67
 Number of clusters: 3
 Cluster centroid: 1.5
 Points: [1.0, 2.0]
@@ -55,7 +55,7 @@ Points: [15.0, 16.0]
 Size: 2 points
 ```
 
-## � Performance Benchmarks
+## ⚡ Performance Benchmarks
 
 UniCluster.Net significantly outperforms ML.NET's K-means implementation for 1D clustering in both **speed** and **solution quality**:
 
@@ -78,20 +78,9 @@ UniCluster.Net significantly outperforms ML.NET's K-means implementation for 1D 
 - **📈 Scalability**: Performance advantage increases with dataset size
 - **🎲 Initialization**: UniCluster.Net requires no parameter tuning, while ML.NET results depend on random initialization
 
-### Stability Test Results
-
-Testing on overlapping clusters (challenging scenario):
-
-| Algorithm | Mean WCSS | Standard Deviation | Consistency |
-|-----------|-----------|-------------------|-------------|
-| **UniCluster.Net** | 196.58 | **0.000000** | **100% Consistent** |
-| **ML.NET** | 235.15 | **47.08** | Highly Variable |
-
-*UniCluster.Net produces identical results every time, while ML.NET varies significantly between runs due to random initialization.*
-
 > **Note on Quality Comparison**: The WCSS values differ between algorithms because they may find different valid clustering solutions. UniCluster.Net guarantees the globally optimal solution for 1D data, while ML.NET uses iterative optimization that can converge to local optima. For well-separated clusters, both typically find the same solution. For complex data with overlapping distributions, the guaranteed global optimum becomes crucial for reproducible, theoretically sound results.
 
-## �🔬 Algorithm Details
+## 🔬 Algorithm Details
 
 This library implements the optimal 1D K-means algorithm based on dynamic programming techniques from recent machine learning research. The algorithm:
 
