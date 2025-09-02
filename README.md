@@ -105,13 +105,6 @@ Traditional K-means clustering can get stuck in local optima depending on initia
 - ✅ **No hyperparameter tuning** (iterations, initialization, tolerance)
 - ✅ **No initialization sensitivity** - always finds the same optimal solution
 
-### vs Traditional K-Means
-- ✅ **No random initialization** issues
-- ✅ **No convergence problems**
-- ✅ **No local optimum traps**
-- ✅ **Reproducible results** every time
-- ✅ **Mathematically proven optimality**
-
 ### When Global Optimality Matters
 
 Global optimality is crucial in scenarios where consistency and theoretical soundness are important:
