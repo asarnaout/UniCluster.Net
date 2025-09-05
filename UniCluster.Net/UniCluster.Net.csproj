@@ -36,5 +36,9 @@
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
       <_Parameter1>UniCluster.Tests</_Parameter1>
     </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>UniCluster.Net.Benchmarks</_Parameter1>
+    </AssemblyAttribute>
   </ItemGroup>
+
 </Project>
