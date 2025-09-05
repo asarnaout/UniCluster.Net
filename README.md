@@ -1,5 +1,10 @@
 # UniCluster.Net
 
+[![NuGet Version](https://img.shields.io/nuget/v/UniCluster.Net.svg)](https://www.nuget.org/packages/UniCluster.Net)
+[![NuGet Downloads](https://img.shields.io/nuget/dt/UniCluster.Net.svg)](https://www.nuget.org/packages/UniCluster.Net)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](License.md)
+[![.NET](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/en-us/download/dotnet/8.0)
+
 High-performance .NET library for optimal 1D K-means clustering using dynamic programming. Guarantees globally optimal solutions for one-dimensional data with deterministic results and predictable O(k·n) time complexity, achieving 28-142x performance improvements over ML.NET K-means.
 
 ## Key Features
@@ -64,17 +69,36 @@ foreach (var cluster in result.Clusters)
 
 ## Algorithm Details
 
-UniCluster.Net implements the optimal 1D K-means algorithm using dynamic programming with the following innovations:
-
-- **Monotonicity Optimization**: Exploits the monotonicity property of 1D clustering to achieve O(k·n) time complexity
-- **Efficient Cost Computation**: Uses prefix sums for O(1) cluster cost calculation
-- **Memory-Optimized DP**: Optimized dynamic programming table structure
-
 The algorithm minimizes the within-cluster sum of squares (WCSS):
 ```
 WCSS = Σᵢ Σⱼ (xᵢⱼ - cᵢ)²
 ```
 where xᵢⱼ is the j-th point in cluster i, and cᵢ is the centroid of cluster i.
+
+### How it works (optimal 1D K‑means via Dynamic Programming):
+
+Goal: split sorted data into k contiguous groups to minimize total squared error.
+
+1) Precompute prefix sums so that looking up the cost of clustering any segment [a..b] into one cluster is an O(1) operation.
+2) Fill the first column: DP(i,1) = cost(1..i).
+3) For k = 2..K and i = k..n, choose a split j < i that minimizes:
+   DP(j, k−1) + cost(j+1..i). This is the (previously computed) cost of clustering j elements in k-1 clusters, in addition to clustering the rest of the set (j+1..i) into 1 more cluster cluster.
+4) Record j to later backtrack and reconstruct the clusters.
+
+Example x = [1,2,3,10,11,12], k = 2:
+
+For i = 6, we try j = 1..5. The best is j = 3:
+- Left: DP(3,1) = cost(1..3) = 2.0
+- Right: cost(4..6) = 2.0
+- Total = 4.0 → clusters [1,2,3] and [10,11,12]
+
+Note: You don’t need to compute any of this yourself—`Fit(data, k)` does it deterministically.
+
+### How the Monotonicity property allows this to run in O(k·n) time rather than O(k·n²):
+
+- Naive DP evaluates, for each state (i, k), all split positions j ∈ [k−1, i−1], which is O(k·n²) overall.
+- However in 1D Clustering, the optimal split index j* that minimizes DP(j, k−1) + cost(j+1..i) is non-decreasing as i grows. 
+- Therefore, in UniCluster.Net we carry j* forward and only advance it when it reduces cost. Each j is visited at most once per k, making the total time complexity of constructing the DP table O(k·n).
 
 ## Benchmarking
 

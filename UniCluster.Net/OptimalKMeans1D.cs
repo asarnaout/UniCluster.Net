@@ -46,8 +46,9 @@ public class OptimalKMeans1D
     /// <remarks>
     /// <para>
     /// This implementation uses the optimal 1D K-means algorithm based on dynamic programming,
-    /// which guarantees finding the globally optimal solution. The algorithm has a time complexity
-    /// of O(k * n²) where n is the number of data points and k is the number of clusters.
+    /// which guarantees finding the globally optimal solution. Leveraging the 1D monotonicity of
+    /// the optimal split index across i, it runs in O(k·n) time (vs the naive O(k·n²)) and uses
+    /// O(k·n) memory for the DP tables.
     /// </para>
     /// <para>
     /// The input values are automatically sorted before clustering, so the order of the input
