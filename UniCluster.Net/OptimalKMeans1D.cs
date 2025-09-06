@@ -6,11 +6,11 @@ public class OptimalKMeans1D
 
     private double[] _prefixSumOfSquares = default!;
 
-    private double[,] _dpTable = default!;
+    private double[] _dpRef1 = default!;
 
-    private int[,] _bestSplitIndices = default!;
+    private double[] _dpRef2 = default!;
 
-    internal double[,] DpTable => _dpTable;
+    private Stack<int> _bestSplits = default!;
 
     internal double[] PrefixSums => _prefixSums;
 
@@ -104,7 +104,7 @@ public class OptimalKMeans1D
         if (k == 1)
         {
             var centroid = values.Average();
-            return new ClusteringResult([new([..values], centroid)], values.Sum(v => (v - centroid) * (v - centroid)));
+            return new ClusteringResult([new([.. values], centroid)], values.Sum(v => (v - centroid) * (v - centroid)));
         }
 
         ComputePrefixSums(values);
@@ -203,33 +203,40 @@ public class OptimalKMeans1D
 
         InitializeTable(length, width);
 
-        for (var k = 1; k < width; k++)
+        for (var i = 1; i < length; i++)
+        {
+            _dpRef1[i] = ComputeCost(1, i);
+        }
+
+        if (numberOfClusters == 1)
+        {
+            return;
+        }
+
+        for (var k = 2; k < width; k++)
         {
             var j = k - 1; //Note that j only increases within the same 'k' and is never reset back to k - 1.
 
+            (var operational, var reference) = k % 2 == 0 
+                ? (_dpRef2, _dpRef1) 
+                : (_dpRef1, _dpRef2);
+
             for (var i = k; i < length; i++)
             {
-                if (k == 1)
+                for (; j <= i - 2; j++)
                 {
-                    _dpTable[i, k] = ComputeCost(1, i);
-                }
-                else
-                {
-                    for (; j <= i - 2; j++)
+                    var currentCost = reference[j] + ComputeCost(j + 1, i);
+                    var nextCost = reference[j + 1] + ComputeCost(j + 2, i);
+
+                    if (nextCost >= currentCost)
                     {
-                        var currentCost = _dpTable[j, k - 1] + ComputeCost(j + 1, i);
-                        var nextCost = _dpTable[j + 1, k - 1] + ComputeCost(j + 2, i);
-
-                        if (nextCost >= currentCost)
-                        {
-                            break;
-                        }
+                        break;
                     }
-
-                    _bestSplitIndices[i, k] = j;
-
-                    _dpTable[i, k] = _dpTable[j, k - 1] + ComputeCost(j + 1, i);
                 }
+
+                _bestSplitIndices[i, k] = j;
+
+                operational[i] = reference[j] + ComputeCost(j + 1, i);
             }
         }
     }
@@ -268,7 +275,7 @@ public class OptimalKMeans1D
         {
             var cluster = new List<double>();
 
-            var splitIndex = (int)_bestSplitIndices[i, k];
+            var splitIndex = _bestSplitIndices[i, k];
 
             for (var j = splitIndex + 1; j <= i; j++)
             {
@@ -286,22 +293,21 @@ public class OptimalKMeans1D
         }
     }
 
-    private void InitializeTable(int length, int width)
+    private void InitializeTable(int vals, int clusters)
     {
-        _dpTable = new double[length, width];
-        _bestSplitIndices = new int[length, width];
+        _dpRef1 = new double[vals];
+        _dpRef2 = new double[vals];
+        _bestSplits = new Stack<int>(clusters);
 
-        for (var i = 0; i < length; i++)
+        for (var i = 0; i < vals; i++)
         {
-            for (var j = 0; j < width; j++)
+            if (i == 0)
             {
-                if (i == 0 && j == 0)
-                {
-                    continue;
-                }
-
-                _dpTable[i, j] = double.PositiveInfinity;
+                continue;
             }
+
+            _dpRef1[i] = double.PositiveInfinity;
+            _dpRef2[i] = double.PositiveInfinity;
         }
     }
 
