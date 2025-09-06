@@ -5,13 +5,13 @@
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](License.md)
 [![.NET](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/en-us/download/dotnet/8.0)
 
-High-performance .NET library for optimal 1D K-means clustering using dynamic programming. Guarantees globally optimal solutions for one-dimensional data with deterministic results and predictable O(k·n) time complexity, achieving 28-142x performance improvements over ML.NET K-means.
+High-performance .NET library for optimal 1D K-means clustering using dynamic programming. Guarantees globally optimal solutions for one-dimensional data with deterministic results and predictable O(k·n) time complexity, achieving 39-951x performance improvements over ML.NET K-means.
 
 ## Key Features
 
 - **Guaranteed Global Optimum**: Uses dynamic programming to find the mathematically optimal clustering solution
 - **Deterministic Results**: Always produces the same result for the same input data
-- **High Performance**: Optimized O(k·n) implementation, 28-142x faster than ML.NET K-means
+- **High Performance**: Optimized O(k·n) implementation, 39-951x faster than ML.NET K-means
 - **Simple API**: Easy-to-use interface for 1D clustering scenarios
 - **Well-Tested**: Comprehensive test suite with extensive validation
 
@@ -45,7 +45,7 @@ foreach (var cluster in result.Clusters)
 | Aspect | UniCluster.Net | ML.NET K-means |
 |--------|---------------|-------------------|
 | **Solution Quality** | Globally optimal (guaranteed) | Locally optimal (variable) |
-| **Performance** | 28-142x faster | Baseline |
+| **Performance** | 39-951x faster | Baseline |
 | **Consistency** | Deterministic, same every time | Random initialization, varies |
 | **Space Complexity** | O(k·n) | O(n + k) iterative |
 | **Time Complexity** | O(k·n) guaranteed | O(i·k·n) where i = iterations |
@@ -102,7 +102,17 @@ Note: You don’t need to compute any of this yourself—`Fit(data, k)` does it 
 
 ## Benchmarking
 
-Run the included benchmarks to compare with other implementations:
+### Performance Results
+
+Benchmarks conducted on Windows 11, 13th Gen Intel Core i7-13620H @ 2.40GHz, .NET 8.0:
+
+| Dataset | UniCluster.Net | ML.NET Single Run | ML.NET Best-of-N | Improvement (Single) |
+|---------|----------------|-------------------|------------------|---------------------|
+| **Small** (30 points, k=3) | 840 ns | 798,276 ns | 8,309,976 ns (10 runs) | **951x faster** |
+| **Medium** (300 points, k=5) | 11,840 ns | 1,169,301 ns | 11,197,798 ns (10 runs) | **99x faster** |
+| **Large** (1000 points, k=8) | 61,293 ns | 2,406,017 ns | 11,902,864 ns (5 runs) | **39x faster** |
+
+### Run Benchmarks Yourself
 
 ```bash
 cd UniCluster.Net.Benchmarks
@@ -110,9 +120,9 @@ dotnet run -c Release
 ```
 
 The benchmark suite includes:
-- Small datasets (30 points)
-- Medium datasets (300 points) 
-- Large datasets (1000+ points)
+- Small datasets (30 points, k=3)
+- Medium datasets (300 points, k=5) 
+- Large datasets (1000 points, k=8)
 - Comparison with ML.NET single-run and best-of-N approaches
 
 ## Contributing
