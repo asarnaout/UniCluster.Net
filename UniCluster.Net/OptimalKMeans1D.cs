@@ -48,7 +48,7 @@ public class OptimalKMeans1D
     /// This implementation uses the optimal 1D K-means algorithm based on dynamic programming,
     /// which guarantees finding the globally optimal solution. Leveraging the 1D monotonicity of
     /// the optimal split index across i, it runs in O(k·n) time (vs the naive O(k·n²)) and uses
-    /// O(k·n) memory for the DP tables.
+    /// O(k·n) memory for the backtracking table.
     /// </para>
     /// <para>
     /// The input values are automatically sorted before clustering, so the order of the input
@@ -197,6 +197,10 @@ public class OptimalKMeans1D
     /// and only advance it when it reduces the cost. Since j* advances monotonically across i,
     /// each index is examined at most once per cluster count k. This reduces the per-row cost
     /// from O(n²) to O(n), resulting in an overall complexity of O(k·n).
+    /// </para>
+    /// <para>
+    /// Note that this method doesn't explicitly store the full DP table of size O(k·n) but rather only tracks two 1-D arrays of size O(n) for the 
+    /// current and previous k values. This optimization is possible because each DP state only depends on the previous k's states.
     /// </para>
     /// </remarks>
     internal void ComputeClusterCosts(double[] values, int numberOfClusters)
