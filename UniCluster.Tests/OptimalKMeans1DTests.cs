@@ -760,9 +760,200 @@ public class OptimalKMeans1DTests
         }
     }
 
+    [Fact]
+    public void Fit_ComprehensiveBruteForceComparison_ShouldMatchOptimalSolutionInAllAspects()
+    {
+        // Arrange
+        var optimizer = new OptimalKMeans1D();
+        
+        // Comprehensive test cases covering various scenarios
+        var testCases = new[]
+        {
+            // Basic well-separated clusters
+            (new double[] { 1.0, 2.0, 10.0, 11.0 }, 2, "Basic two clusters"),
+            (new double[] { 1.0, 2.0, 3.0, 10.0, 11.0, 12.0 }, 2, "Clear separation"),
+            (new double[] { 0.0, 1.0, 2.0, 8.0, 9.0, 10.0, 18.0, 19.0, 20.0 }, 3, "Three well-separated clusters"),
+            
+            // Edge cases
+            (new double[] { 5.0 }, 1, "Single point"),
+            (new double[] { 3.0, 3.0, 3.0 }, 1, "Identical values - single cluster"),
+            (new double[] { 3.0, 3.0, 3.0 }, 3, "Identical values - multiple clusters"),
+            (new double[] { 1.0, 5.0 }, 2, "Two points, two clusters"),
+            
+            // Complex distributions
+            (new double[] { 1.0, 1.5, 2.0, 5.0, 5.5, 6.0, 10.0, 10.5, 11.0, 15.0, 15.5, 16.0 }, 4, "Four natural clusters"),
+            (new double[] { 1.0, 2.0, 3.0, 4.0, 5.0, 20.0, 21.0 }, 2, "Uneven cluster sizes"),
+            (new double[] { -5.0, -4.0, -3.0, 0.0, 3.0, 4.0, 5.0 }, 3, "Negative and positive values"),
+            
+            // Precision testing
+            (new double[] { 1.001, 1.002, 1.003, 2.001, 2.002, 2.003 }, 2, "Close decimal values"),
+            (new double[] { 0.1, 0.2, 0.9, 1.0, 1.1, 1.9, 2.0, 2.1 }, 3, "Fractional clustering"),
+            
+            // Larger test cases (still small enough for brute force)
+            (new double[] { 1.0, 2.0, 3.0, 4.0, 10.0, 11.0, 12.0, 13.0 }, 2, "Larger balanced clusters"),
+            (new double[] { 1.0, 1.1, 1.2, 5.0, 5.1, 5.2, 9.0, 9.1, 9.2, 13.0, 13.1, 13.2 }, 4, "Four tight clusters"),
+            
+            // Various k values for stress testing
+            (new double[] { 1.0, 3.0, 5.0, 7.0, 9.0, 11.0 }, 1, "Single cluster from multiple points"),
+            (new double[] { 1.0, 3.0, 5.0, 7.0, 9.0, 11.0 }, 3, "Three clusters from six points"),
+            (new double[] { 1.0, 3.0, 5.0, 7.0, 9.0, 11.0 }, 6, "Maximum clusters"),
+            
+            // Boundary conditions
+            (new double[] { 0.0, 1000.0 }, 2, "Wide range separation"),
+            (new double[] { -100.0, -50.0, 50.0, 100.0 }, 2, "Symmetric around zero"),
+            
+            // Gradual transitions (harder to separate optimally)
+            (new double[] { 1.0, 2.0, 4.0, 7.0, 11.0, 16.0 }, 3, "Gradual spacing"),
+            (new double[] { 1.0, 1.5, 2.5, 4.0, 6.5, 10.0 }, 2, "Non-uniform spacing")
+        };
+
+        // Act & Assert
+        foreach (var (data, k, description) in testCases)
+        {
+            // Get library result
+            var libraryResult = optimizer.Fit(data, k);
+            
+            // Get brute force result with full cluster information
+            var (bruteForceWCSS, bruteForceClusterAssignments) = BruteForceOptimalWithClusters(data, k);
+            
+            // Test 1: WCSS should match exactly
+            Assert.True(Math.Abs(libraryResult.TotalCost - bruteForceWCSS) < 1e-10, 
+                $"[{description}] Library WCSS ({libraryResult.TotalCost:F10}) should match brute force WCSS ({bruteForceWCSS:F10})");
+            
+            // Test 2: Number of clusters should match
+            Assert.Equal(k, libraryResult.ClusterCount);
+            Assert.Equal(k, bruteForceClusterAssignments.Length);
+            
+            // Test 3: All original points should be assigned exactly once
+            var libraryPoints = libraryResult.Clusters.SelectMany(c => c.Points).OrderBy(p => p).ToArray();
+            var originalSorted = data.OrderBy(p => p).ToArray();
+            
+            Assert.Equal(originalSorted.Length, libraryPoints.Length);
+            for (int i = 0; i < originalSorted.Length; i++)
+            {
+                Assert.Equal(originalSorted[i], libraryPoints[i], 15);
+            }
+            
+            // Test 4: Cluster assignments should represent the same partition
+            // Convert library result to comparable format
+            var libraryClusters = libraryResult.Clusters
+                .Select(c => c.Points.OrderBy(p => p).ToArray())
+                .OrderBy(cluster => cluster[0])
+                .ToArray();
+                
+            var bruteForceClusters = bruteForceClusterAssignments
+                .Select(cluster => cluster.OrderBy(p => p).ToArray())
+                .OrderBy(cluster => cluster[0])
+                .ToArray();
+            
+            Assert.Equal(libraryClusters.Length, bruteForceClusters.Length);
+            
+            for (int i = 0; i < libraryClusters.Length; i++)
+            {
+                Assert.Equal(libraryClusters[i].Length, bruteForceClusters[i].Length);
+                for (int j = 0; j < libraryClusters[i].Length; j++)
+                {
+                    Assert.Equal(libraryClusters[i][j], bruteForceClusters[i][j], 15);
+                }
+            }
+            
+            // Test 5: Centroids should be calculated correctly
+            foreach (var cluster in libraryResult.Clusters)
+            {
+                var expectedCentroid = cluster.Points.Average();
+                Assert.Equal(expectedCentroid, cluster.Centroid, 15);
+            }
+            
+            // Test 6: Manual WCSS calculation should match reported WCSS
+            var manualWCSS = libraryResult.Clusters.Sum(cluster => 
+                cluster.Points.Sum(point => Math.Pow(point - cluster.Centroid, 2)));
+            Assert.Equal(libraryResult.TotalCost, manualWCSS, 10);
+            
+            // Test 7: For k=n (max clusters), WCSS should be zero
+            if (k == data.Length)
+            {
+                Assert.Equal(0.0, libraryResult.TotalCost, 10);
+                Assert.True(libraryResult.Clusters.All(c => c.PointCount == 1));
+            }
+            
+            // Test 8: For k=1, WCSS should equal total variance
+            if (k == 1)
+            {
+                var totalVariance = data.Sum(x => Math.Pow(x - data.Average(), 2));
+                Assert.Equal(totalVariance, libraryResult.TotalCost, 10);
+            }
+        }
+    }
+
     #endregion
 
     #region Helper Methods
+
+    /// <summary>
+    /// Brute force optimal solution finder that returns both WCSS and cluster assignments
+    /// </summary>
+    private static (double wcss, double[][] clusters) BruteForceOptimalWithClusters(double[] data, int k)
+    {
+        var n = data.Length;
+        var sortedData = data.OrderBy(x => x).ToArray();
+        
+        if (k == 1)
+        {
+            var centroid = sortedData.Average();
+            var wcss = sortedData.Sum(x => Math.Pow(x - centroid, 2));
+            return (wcss, new double[][] { sortedData });
+        }
+        
+        if (k >= n)
+        {
+            var singletonClusters = sortedData.Select(x => new double[] { x }).ToArray();
+            return (0.0, singletonClusters);
+        }
+        
+        double bestWCSS = double.MaxValue;
+        double[][] bestClusters = [];
+        
+        // Generate all combinations of k-1 split points from n-1 possible positions
+        var splitPositions = new List<int[]>();
+        GenerateCombinations(Enumerable.Range(1, n-1).ToArray(), k-1, new int[k-1], 0, splitPositions);
+        
+        foreach (var splits in splitPositions)
+        {
+            var wcss = 0.0;
+            var start = 0;
+            var currentClusters = new List<double[]>();
+            
+            // Process each cluster defined by the splits
+            foreach (var end in splits)
+            {
+                var clusterPoints = sortedData.Skip(start).Take(end - start).ToArray();
+                if (clusterPoints.Length > 0)
+                {
+                    var centroid = clusterPoints.Average();
+                    wcss += clusterPoints.Sum(p => Math.Pow(p - centroid, 2));
+                    currentClusters.Add(clusterPoints);
+                }
+                start = end;
+            }
+            
+            // Last cluster
+            var lastClusterPoints = sortedData.Skip(start).ToArray();
+            if (lastClusterPoints.Length > 0)
+            {
+                var lastCentroid = lastClusterPoints.Average();
+                wcss += lastClusterPoints.Sum(p => Math.Pow(p - lastCentroid, 2));
+                currentClusters.Add(lastClusterPoints);
+            }
+            
+            if (wcss < bestWCSS)
+            {
+                bestWCSS = wcss;
+                bestClusters = currentClusters.ToArray();
+            }
+        }
+        
+        return (bestWCSS, bestClusters);
+    }
 
     /// <summary>
     /// Brute force optimal solution finder for verification purposes
