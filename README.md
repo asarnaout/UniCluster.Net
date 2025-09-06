@@ -47,7 +47,7 @@ foreach (var cluster in result.Clusters)
 | **Solution Quality** | Globally optimal (guaranteed) | Locally optimal (variable) |
 | **Performance** | 28-142x faster | Baseline |
 | **Consistency** | Deterministic, same every time | Random initialization, varies |
-| **Memory Usage** | O(k·n) for DP table | O(n + k) iterative |
+| **Space Complexity** | O(k·n) | O(n + k) iterative |
 | **Time Complexity** | O(k·n) guaranteed | O(i·k·n) where i = iterations |
 | **Dimensions** | 1D only | Multi-dimensional |
 
