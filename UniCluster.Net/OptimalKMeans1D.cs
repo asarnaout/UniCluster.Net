@@ -10,7 +10,7 @@ public class OptimalKMeans1D
 
     private double[] _dpRef2 = default!;
 
-    private Stack<int> _bestSplits = default!;
+    private int[,] _bestSplitIndices = default!;
 
     internal double[] PrefixSums => _prefixSums;
 
@@ -120,7 +120,9 @@ public class OptimalKMeans1D
             clusters.Add(new Cluster(points, centroid));
         }
 
-        var totalCost = _dpTable[values.Length, k];
+        var totalCost = k % 2 == 0 
+            ? _dpRef2[values.Length] 
+            : _dpRef1[values.Length];
 
         return new ClusteringResult(clusters, totalCost);
     }
@@ -297,7 +299,7 @@ public class OptimalKMeans1D
     {
         _dpRef1 = new double[vals];
         _dpRef2 = new double[vals];
-        _bestSplits = new Stack<int>(clusters);
+        _bestSplitIndices = new int[vals, clusters];
 
         for (var i = 0; i < vals; i++)
         {
