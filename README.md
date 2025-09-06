@@ -40,6 +40,21 @@ foreach (var cluster in result.Clusters)
 }
 ```
 
+### Expected Output
+
+```
+Total Cost (WCSS): 2.50
+Number of Clusters: 2
+
+Cluster 1: [1, 2]
+Centroid: 1.50
+  
+Cluster 2: [8, 9, 10]  
+Centroid: 9.00
+```
+
+The algorithm automatically identifies the optimal clustering that minimizes within-cluster sum of squares (WCSS), grouping similar values together while maximizing separation between clusters.
+
 ## Comparison with ML.NET K-means
 
 | Aspect | UniCluster.Net | ML.NET K-means |
