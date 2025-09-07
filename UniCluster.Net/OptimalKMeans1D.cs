@@ -305,16 +305,10 @@ public class OptimalKMeans1D
         _dpRef2 = new double[vals];
         _bestSplitIndices = new int[vals, clusters];
 
-        for (var i = 0; i < vals; i++)
-        {
-            if (i == 0)
-            {
-                continue;
-            }
-
-            _dpRef1[i] = double.PositiveInfinity;
-            _dpRef2[i] = double.PositiveInfinity;
-        }
+        Array.Fill(_dpRef1, double.PositiveInfinity);
+        Array.Fill(_dpRef2, double.PositiveInfinity);
+        _dpRef1[0] = 0;
+        _dpRef2[0] = 0;
     }
 
     /// <summary>
