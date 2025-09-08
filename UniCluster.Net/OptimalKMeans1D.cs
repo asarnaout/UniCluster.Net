@@ -207,7 +207,9 @@ public class OptimalKMeans1D
     {
         int length = values.Length + 1, width = numberOfClusters + 1;
 
-        InitializeTable(length, width);
+        _dpRef1 = new double[length];
+        _dpRef2 = new double[length];
+        _bestSplitIndices = new int[length, width];
 
         for (var i = 1; i < length; i++)
         {
@@ -296,24 +298,6 @@ public class OptimalKMeans1D
         for (var index = clusters.Count - 1; index >= 0; index--)
         {
             yield return clusters[index];
-        }
-    }
-
-    private void InitializeTable(int vals, int clusters)
-    {
-        _dpRef1 = new double[vals];
-        _dpRef2 = new double[vals];
-        _bestSplitIndices = new int[vals, clusters];
-
-        for (var i = 0; i < vals; i++)
-        {
-            if (i == 0)
-            {
-                continue;
-            }
-
-            _dpRef1[i] = double.PositiveInfinity;
-            _dpRef2[i] = double.PositiveInfinity;
         }
     }
 
