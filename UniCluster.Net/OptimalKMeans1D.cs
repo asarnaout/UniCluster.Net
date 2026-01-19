@@ -111,13 +111,13 @@ public class OptimalKMeans1D
         ComputeClusterCosts(values, k);
 
         var clusterPoints = Backtrack(values, k);
-        var clusters = new List<Cluster>();
+        var clusters = new Cluster[k];
 
-        foreach (var clusterPointsList in clusterPoints)
+        for (var i = 0; i < k; i++)
         {
-            var points = clusterPointsList.ToList();
+            var points = clusterPoints[i];
             var centroid = points.Average();
-            clusters.Add(new Cluster(points, centroid));
+            clusters[i] = new Cluster(points, centroid);
         }
 
         var totalCost = k % 2 == 0 
@@ -267,38 +267,35 @@ public class OptimalKMeans1D
     /// <param name="values">The sorted array of values that were clustered.</param>
     /// <param name="numberOfClusters">The number of clusters to reconstruct.</param>
     /// <returns>
-    /// An enumerable of clusters, where each cluster is an enumerable of double values.
+    /// An array of clusters, where each cluster is an array of double values.
     /// Clusters are returned in the order they appear in the sorted values array.
     /// </returns>
     /// <remarks>
     /// Uses the <see cref="_bestSplitIndices"/> table computed during the dynamic programming phase
     /// to determine the optimal split points and reconstruct the actual cluster assignments.
     /// </remarks>
-    private IEnumerable<IEnumerable<double>> Backtrack(double[] values, int numberOfClusters)
+    private double[][] Backtrack(double[] values, int numberOfClusters)
     {
-        List<List<double>> clusters = [];
+        var clusters = new double[numberOfClusters][];
 
         var i = values.Length;
         for (var k = numberOfClusters; k >= 1; k--)
         {
-            var cluster = new List<double>();
-
             var splitIndex = _bestSplitIndices[i, k];
+            var clusterSize = i - splitIndex;
+            var cluster = new double[clusterSize];
 
-            for (var j = splitIndex + 1; j <= i; j++)
+            for (var j = 0; j < clusterSize; j++)
             {
-                cluster.Add(values[j - 1]);
+                cluster[j] = values[splitIndex + j];
             }
 
             i = splitIndex;
 
-            clusters.Add(cluster);
+            clusters[k - 1] = cluster;
         }
 
-        for (var index = clusters.Count - 1; index >= 0; index--)
-        {
-            yield return clusters[index];
-        }
+        return clusters;
     }
 
     /// <summary>
