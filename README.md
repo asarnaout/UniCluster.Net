@@ -3,7 +3,7 @@
 [![NuGet Version](https://img.shields.io/nuget/v/UniCluster.Net.svg)](https://www.nuget.org/packages/UniCluster.Net)
 [![NuGet Downloads](https://img.shields.io/nuget/dt/UniCluster.Net.svg)](https://www.nuget.org/packages/UniCluster.Net)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](License.md)
-[![.NET](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/en-us/download/dotnet/8.0)
+[![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/en-us/download/dotnet/10.0)
 
 High-performance .NET library for optimal 1D K-means clustering using dynamic programming. Guarantees globally optimal solutions for one-dimensional data with deterministic results and predictable O(k·n) time complexity, achieving 39-951x performance improvements over ML.NET K-means.
 
