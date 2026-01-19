@@ -6,7 +6,7 @@
 
     <!-- NuGet Package Configuration -->
     <PackageId>UniCluster.Net</PackageId>
-    <Version>1.1.0</Version>
+    <Version>1.2.0</Version>
     <Authors>asarnaout</Authors>
     <Product>UniCluster.Net</Product>
     <Description>High-performance .NET library for optimal 1D K-means clustering using dynamic programming. Guarantees globally optimal solutions for one-dimensional data in O(k·n) time, outperforming traditional K-means implementations by 39-951x in speed while ensuring deterministic results.</Description>
@@ -17,7 +17,7 @@
     <RepositoryType>git</RepositoryType>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageReleaseNotes>Initial release of UniCluster.Net - Optimal 1D K-means clustering library with guaranteed global optimum and 12-16x performance improvement over traditional implementations.</PackageReleaseNotes>
+    <PackageReleaseNotes>v1.2.0: Added .NET 10 support (multi-targeting net8.0 and net10.0). Optimized Backtrack method to use arrays instead of lists, eliminating unnecessary allocations and reversal.</PackageReleaseNotes>
     
     <!-- Additional metadata for better discoverability -->
     <Title>UniCluster.Net - Optimal 1D K-means Clustering</Title>
